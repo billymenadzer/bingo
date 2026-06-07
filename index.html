@@ -29,7 +29,6 @@
         input[type="text"] { padding: 12px; border-radius: 6px; border: 1px solid var(--neon-cyan); background: rgba(0,0,0,0.5); color: white; font-size: 1.1em; text-align: center; outline: none; width: 80%; }
         input[type="text"]:disabled { opacity: 0.6; cursor: not-allowed; border-color: #555; }
         
-        /* --- CYBERPUNKOWY STYL ZEGARA --- */
         .countdown-box { margin: 15px 0; padding: 12px; border: 2px solid var(--neon-cyan); border-radius: 8px; font-family: 'Courier New', Courier, monospace; background: rgba(0,0,0,0.5); box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.15), 0 0 10px rgba(0, 240, 255, 0.1); width: 85%; text-align: center; font-size: 0.95em; line-height: 1.4; transition: all 0.3s ease; }
 
         .rules-section { margin-top: 25px; padding: 20px; background: rgba(0, 240, 255, 0.05); border: 1px dashed var(--neon-cyan); border-radius: 8px; font-family: 'Courier New', Courier, monospace; text-align: left; font-size: 0.9em; width: 80%; }
@@ -38,7 +37,7 @@
         #coupon-status { margin-top: 15px; font-size: 1.1em; font-weight: bold; color: var(--neon-pink); white-space: pre-line; min-height: 24px; }
 
         .bingo-panel { flex: 2; min-width: 500px; background: var(--card-bg); border: 2px solid var(--neon-cyan); border-radius: 12px; padding: 25px; box-shadow: 0 0 25px rgba(0, 240, 255, 0.25); backdrop-filter: blur(10px); }
-        .bingo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .bingo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
         .bingo-cell { background: rgba(25, 25, 45, 0.75); border: 1px solid rgba(0, 240, 255, 0.4); border-radius: 8px; aspect-ratio: 1.15; display: flex; align-items: center; justify-content: center; font-size: 0.95em; padding: 12px; cursor: pointer; text-align: center; font-weight: 600; color: #e2e2ff; user-select: none; transition: 0.3s; word-wrap: break-word; }
         .bingo-cell:hover { background: rgba(255, 0, 127, 0.15); border-color: var(--neon-pink); }
         .bingo-cell.marked { background: rgba(255, 0, 127, 0.4); border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.8), inset 0 0 10px rgba(255, 0, 127, 0.4); color: #fff; transform: scale(1.03); z-index: 2; }
@@ -120,28 +119,29 @@
         const db = supabase.createClient(supabaseUrl, supabaseKey);
 
         const allPhrases = [
-            "Szkoła surykatki", "Adam", "Spotkanie biznesowe", "Prysznic", "Junku, gdzie jesteś?",
-            "Jedzenie dla Junku", "Angkor Wat", "Rynek", "Kawa", "Robaki dla surykatek",
-            "Mamy gości", "Asia się nagrywa", "Asia patrzy z pogardą", "Ooo kotki!",
-            "Niestety, ale...", "Ulewa", "Zupa", "Inwestor", "Nie sprzedaję farmy",
-            "Sprzedaję farmę", "Mama Juny", "Alan i Eco", "Ewa", "Przepraszam państwa, ale...",
-            "Brenda", "Nic nie jadłem", "Pyszne jedzonko", "Basen", "Biznes lubi ciszę",
-            "Musicie państwo zrozumieć...", "Sklep z filtrami", "Nasze kiszonki", "Burgery",
-            "Paluchy w zbliżeniu", "Lekarz / szpital / ciśnienie", "Motocykl", "Mamy problem",
-            "Sklep AQ", "Fryzjer", "Nowe koszulki", "Nowe buty", "Problem z prądem",
-            "Problem z internetem", "Urodziny Juny", "Tharong", "Wujek od giftów",
-            "Swimming pool", "Prezenty", "Źli Khmerzy", "Nowe T-shirty", "Waterproof jacket",
-            "Gas station", "Ekspres do kawy", "Mamy gości niespodziewanie", "Muszę jechać",
-            "Muszę kupić", "Poliakov", "Zawleczki Cambodia"
+            "szkolasurykatki", "Adam", "Spotkanie biznesowe", "prysznic", "Junku gdzie jestes", 
+            "jedzenie dla Junku", "AngkorWat", "rynek", "kawa", "robaki dla surykatek", 
+            "mamy Gosci", "Asia sie nagrywa", "Asia patrzy z pogarda", "ooo kotki!", 
+            "niestety ale....", "ulewa", "zupa", "inwestor", "nie sprzedaje farmy", 
+            "sprzedaje farme", "mama juny", "Alan i Eco", "Ewa", "przepraszam panstwa ale...", 
+            "Brenda", "nic nie jadlem", "pySZne jedzonko", "basen", "biznes lubi cisze", 
+            "musicie Panstwo zrozumiec...", "sklep z filtrami", "nasze kiszonki", "burgery", 
+            "paluchy w zblizeniu", "lekarz / szpital/ cisnienie", "motocykl", "mamy problem", 
+            "sklep AQ", "fryzjer", "nowe koszulki", "nowe buty", "problem z pradem", 
+            "praoblem z internetem", "urodziny juny", "Tharong", "Wujek od giftow", 
+            "Swimming pool", "prezenty", "zli khmerzy", "nowe tshirty", "water proof jacket", 
+            "gas station", "express do kawy", "mamy gosci niespodziewanie", "musze jechac", 
+            "musze kupic", "poliakov", "zawleczki camodia", "pani z kiosku", "zeby paszport", 
+            "problemy z cisnieniem", "AQ filters"
         ];
 
         let currentCardPhrases = [];
-        let markedCells = new Array(16).fill(false);
-        const winningLines = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15], [0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15], [0, 5, 10, 15], [3, 6, 9, 12]];
+        let markedCells = new Array(9).fill(false);
+        const winningLines = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
 
         function isBettingOpen() {
             const hour = new Date().getHours();
-            if (hour === 7) { return false; } // Blokada równe 7:00 do 7:59
+            if (hour === 7) { return false; } 
             return true;
         }
 
@@ -149,15 +149,12 @@
             const now = new Date();
             const today7AM = new Date();
             today7AM.setHours(7, 0, 0, 0);
-            
-            // Jeśli minęła już 7:00, to najbliższy odcinek do obstawiania jest jutro
             if (now >= today7AM) {
                 now.setDate(now.getDate() + 1);
             }
             return now.toISOString().split('T')[0];
         }
 
-        // --- DYNAMICZNY ZEGAR I AUTOMATYCZNA LOGIKA OKIENKA ---
         function updateCountdown() {
             const now = new Date();
             const today7AM = new Date(); today7AM.setHours(7, 0, 0, 0);
@@ -219,7 +216,6 @@
             
             if (savedDataRaw) {
                 const data = JSON.parse(savedDataRaw);
-                // Autoczyszczenie starego kuponu po wejściu w nową dobę rozliczeniową (po godzinie 08:00)
                 if (data.odcinek_data && data.odcinek_data !== currentTargetDate) {
                     localStorage.removeItem('kamboBingoCoupon');
                     location.reload();
@@ -230,7 +226,7 @@
             if (savedDataRaw) {
                 const data = JSON.parse(savedDataRaw);
                 currentCardPhrases = data.phrases;
-                markedCells = data.marked || new Array(16).fill(false);
+                markedCells = data.marked || new Array(9).fill(false);
                 document.getElementById('playerNick').value = data.nick;
                 document.getElementById('playerNick').disabled = true; 
                 renderGrid(true); 
@@ -241,8 +237,6 @@
             } else { 
                 generateNewCard(); 
             }
-
-            // Odpalenie odliczania na żywo
             updateCountdown();
             setInterval(updateCountdown, 1000);
         }
@@ -250,8 +244,8 @@
         function generateNewCard() {
             if (!isBettingOpen()) return;
             const shuffled = [...allPhrases].sort(() => Math.random() - 0.5);
-            currentCardPhrases = shuffled.slice(0, 16); 
-            markedCells = new Array(16).fill(false);
+            currentCardPhrases = shuffled.slice(0, 9); 
+            markedCells = new Array(9).fill(false);
             renderGrid(false);
             const statusDiv = document.getElementById('coupon-status');
             statusDiv.innerHTML = "1. Losuj układ.<br>2. Zatwierdź u Szefa.";
@@ -261,7 +255,7 @@
         function renderGrid(isGameActive) {
             const grid = document.getElementById('bingo-grid');
             grid.innerHTML = '';
-            for (let i = 0; i < 16; i++) {
+            for (let i = 0; i < 9; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'bingo-cell';
                 cell.id = 'cell-' + i; 
@@ -280,7 +274,7 @@
 
         function checkWinCondition() {
             let hasWon = false;
-            for (let i = 0; i < 16; i++) document.getElementById('cell-' + i).classList.remove('winning');
+            for (let i = 0; i < 9; i++) document.getElementById('cell-' + i).classList.remove('winning');
             for (let line of winningLines) {
                 if (line.every(idx => markedCells[idx])) {
                     line.forEach(idx => document.getElementById('cell-' + idx).classList.add('winning'));
@@ -289,7 +283,7 @@
             }
             const statusDiv = document.getElementById('coupon-status');
             if (hasWon) {
-                statusDiv.innerHTML = `🔥🔥 KAMBO BINGO!!! 🔥量<br><span style="color:var(--neon-cyan);">Masz pełną linię! Jesteś Szefem!</span>`;
+                statusDiv.innerHTML = `🔥🔥 KAMBO BINGO!!! 🔥🔥<br><span style="color:var(--neon-cyan);">Masz pełną linię! Jesteś Szefem!</span>`;
                 statusDiv.style.color = "var(--neon-pink)";
                 statusDiv.style.animation = "text-pulse 1s infinite alternate";
             } else {
