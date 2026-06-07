@@ -29,6 +29,9 @@
         input[type="text"] { padding: 12px; border-radius: 6px; border: 1px solid var(--neon-cyan); background: rgba(0,0,0,0.5); color: white; font-size: 1.1em; text-align: center; outline: none; width: 80%; }
         input[type="text"]:disabled { opacity: 0.6; cursor: not-allowed; border-color: #555; }
         
+        /* --- CYBERPUNKOWY STYL ZEGARA --- */
+        .countdown-box { margin: 15px 0; padding: 12px; border: 2px solid var(--neon-cyan); border-radius: 8px; font-family: 'Courier New', Courier, monospace; background: rgba(0,0,0,0.5); box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.15), 0 0 10px rgba(0, 240, 255, 0.1); width: 85%; text-align: center; font-size: 0.95em; line-height: 1.4; transition: all 0.3s ease; }
+
         .rules-section { margin-top: 25px; padding: 20px; background: rgba(0, 240, 255, 0.05); border: 1px dashed var(--neon-cyan); border-radius: 8px; font-family: 'Courier New', Courier, monospace; text-align: left; font-size: 0.9em; width: 80%; }
         .rules-title { color: var(--neon-cyan); text-transform: uppercase; font-weight: bold; margin-bottom: 10px; display: block; text-align: center; }
 
@@ -73,16 +76,21 @@
         <div class="dealer-panel">
             <div class="dealer-title">System Weryfikacji AI</div>
             <img src="gapa3.png" alt="Bukmacher" class="dealer-avatar">
+            
             <div class="input-group">
                 <input type="text" id="playerNick" placeholder="Twój nick z czatu">
             </div>
+            
+            <div class="countdown-box" id="countdown-clock">Ładowanie systemu czasu...</div>
+
             <div id="coupon-status">1. Losuj układ.<br>2. Zatwierdź u Szefa.</div>
+            
             <div class="rules-section">
                 <span class="rules-title">// ZASADY GRY</span>
-                1. Otwarcie zakładów od 09:00 rano.<br>
-                2. Zamknięcie bram przed premierą (07:00).<br>
-                3. Klikaj pola w trakcie seansu!<br>
-                4. Złap BINGO i sprawdź wyniki.
+                1. Przyjmowanie zakładów do 07:00 rano.<br>
+                2. Blokada i rozliczenie: 07:00 - 08:00.<br>
+                3. Nowe rozdanie rusza codziennie o 08:00.<br>
+                4. Złap linię, zgarnij BINGO i sprawdź wyniki!
             </div>
         </div>
 
@@ -131,34 +139,87 @@
         let markedCells = new Array(16).fill(false);
         const winningLines = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15], [0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15], [0, 5, 10, 15], [3, 6, 9, 12]];
 
-        // FUNKCJA: Sprawdza, czy zakłady są ZAMKNIĘTE (od 07:00 do 08:59)
         function isBettingOpen() {
             const hour = new Date().getHours();
-            if (hour >= 7 && hour < 9) {
-                return false; 
-            }
+            if (hour === 7) { return false; } // Blokada równe 7:00 do 7:59
             return true;
         }
 
-        // FUNKCJA: Oblicza do którego odcinka przypisać zakład.
-        // Jeśli zakład jest stawiany po 09:00, przypisujemy mu datę JUTRZEJSZĄ.
-        // Jeśli przed 07:00, przypisujemy mu datę DZISIEJSZĄ.
         function getEpisodeDate() {
             const now = new Date();
-            if (now.getHours() >= 9) {
+            const today7AM = new Date();
+            today7AM.setHours(7, 0, 0, 0);
+            
+            // Jeśli minęła już 7:00, to najbliższy odcinek do obstawiania jest jutro
+            if (now >= today7AM) {
                 now.setDate(now.getDate() + 1);
             }
             return now.toISOString().split('T')[0];
         }
 
+        // --- DYNAMICZNY ZEGAR I AUTOMATYCZNA LOGIKA OKIENKA ---
+        function updateCountdown() {
+            const now = new Date();
+            const today7AM = new Date(); today7AM.setHours(7, 0, 0, 0);
+            const today8AM = new Date(); today8AM.setHours(8, 0, 0, 0);
+            
+            let targetDeadline;
+            let closed = false;
+
+            if (now < today7AM) {
+                targetDeadline = today7AM;
+            } else if (now >= today7AM && now < today8AM) {
+                closed = true;
+            } else {
+                targetDeadline = new Date(today7AM);
+                targetDeadline.setDate(targetDeadline.getDate() + 1);
+            }
+
+            const clockDiv = document.getElementById('countdown-clock');
+            const statusDiv = document.getElementById('coupon-status');
+            const btnSave = document.getElementById('btnSave');
+            const btnGen = document.getElementById('btnGen');
+            const savedData = localStorage.getItem('kamboBingoCoupon');
+
+            if (closed) {
+                if (!savedData) {
+                    btnSave.disabled = true;
+                    btnGen.disabled = true;
+                    statusDiv.innerHTML = "ZAKŁADY ZAMKNIĘTE!<br><span style='color:var(--neon-cyan);'>Następna pula ruszy o 08:00.</span>";
+                    statusDiv.style.color = "var(--neon-pink)";
+                }
+                clockDiv.innerHTML = "ZAKŁADY ZAMKNIĘTE";
+                clockDiv.style.color = "var(--neon-pink)";
+                clockDiv.style.borderColor = "var(--neon-pink)";
+                return;
+            }
+
+            const diff = targetDeadline - now;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            const pad = (num) => String(num).padStart(2, '0');
+
+            const options = { day: '2-digit', month: '2-digit' };
+            const formattedTargetDate = targetDeadline.toLocaleDateString('pl-PL', options);
+
+            clockDiv.innerHTML = `Obstawianie na: ${formattedTargetDate}<br><span style="font-size:1.3em; font-weight:bold; letter-spacing:2px;">${pad(hours)}:${pad(minutes)}:${pad(seconds)}</span>`;
+            clockDiv.style.color = "var(--neon-cyan)";
+            clockDiv.style.borderColor = "var(--neon-cyan)";
+
+            if (!savedData) {
+                btnSave.disabled = false;
+                btnGen.disabled = false;
+            }
+        }
+
         function initGame() {
             const currentTargetDate = getEpisodeDate();
-            
-            // Czyszczenie starego kuponu po przejściu na nowy dzień rozliczeniowy
             const savedDataRaw = localStorage.getItem('kamboBingoCoupon');
+            
             if (savedDataRaw) {
                 const data = JSON.parse(savedDataRaw);
-                // Jeśli zapisany kupon ma inną datę odcinka niż ta, która obowiązuje teraz - usuń go
+                // Autoczyszczenie starego kuponu po wejściu w nową dobę rozliczeniową (po godzinie 08:00)
                 if (data.odcinek_data && data.odcinek_data !== currentTargetDate) {
                     localStorage.removeItem('kamboBingoCoupon');
                     location.reload();
@@ -166,17 +227,8 @@
                 }
             }
 
-            if (!isBettingOpen()) {
-                document.getElementById('btnSave').disabled = true;
-                document.getElementById('btnGen').disabled = true;
-                const statusDiv = document.getElementById('coupon-status');
-                statusDiv.innerHTML = "ZAKŁADY ZAMKNIĘTE!<br><span style='color:var(--neon-cyan);'>Otwieramy nową pulę o 09:00.</span>";
-                statusDiv.style.color = "var(--neon-pink)";
-            }
-
-            const savedData = localStorage.getItem('kamboBingoCoupon');
-            if (savedData) {
-                const data = JSON.parse(savedData);
+            if (savedDataRaw) {
+                const data = JSON.parse(savedDataRaw);
                 currentCardPhrases = data.phrases;
                 markedCells = data.marked || new Array(16).fill(false);
                 document.getElementById('playerNick').value = data.nick;
@@ -189,6 +241,10 @@
             } else { 
                 generateNewCard(); 
             }
+
+            // Odpalenie odliczania na żywo
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
         }
 
         function generateNewCard() {
@@ -233,14 +289,14 @@
             }
             const statusDiv = document.getElementById('coupon-status');
             if (hasWon) {
-                statusDiv.innerHTML = `🔥🔥 KAMBO BINGO!!! 🔥🔥<br><span style="color:var(--neon-cyan);">Masz pełną linię! Jesteś Szefem!</span>`;
+                statusDiv.innerHTML = `🔥🔥 KAMBO BINGO!!! 🔥量<br><span style="color:var(--neon-cyan);">Masz pełną linię! Jesteś Szefem!</span>`;
                 statusDiv.style.color = "var(--neon-pink)";
                 statusDiv.style.animation = "text-pulse 1s infinite alternate";
             } else {
                 const savedData = localStorage.getItem('kamboBingoCoupon');
                 if (savedData) {
                     const data = JSON.parse(savedData);
-                    statusDiv.innerHTML = `KUPON ZATWIERDZONY! KOD: ${data.id}<br><span style="color:var(--neon-cyan); font-size: 0.9em;">(System automatycznie nadpisał wczorajszy kupon)</span>`;
+                    statusDiv.innerHTML = `KUPON ZATWIERDZONY! KOD: ${data.id}<br><span style="color:var(--neon-cyan); font-size: 0.9em;">(System automatycznie zresetuje planszę na nowy dzień)</span>`;
                     statusDiv.style.color = "#00ff00";
                     statusDiv.style.animation = "none";
                 }
@@ -259,8 +315,7 @@
             
             document.getElementById('btnSave').disabled = true;
             document.getElementById('btnGen').disabled = true;
-            statusDiv.innerText = "ŁĄCZENIE Z BAZĄ... PRZYJMOWANIE ZAKŁADU!";
-            statusDiv.style.color = "var(--neon-cyan)";
+            statusDiv.innerText = "ŁĄCZENIE Z BAZĄ...";
             
             const randomID = "KB-" + Math.random().toString(36).substr(2, 6).toUpperCase();
             const targetDate = getEpisodeDate();
@@ -285,8 +340,7 @@
                 
                 document.getElementById('playerNick').disabled = true;
                 renderGrid(true); 
-                statusDiv.innerHTML = `KUPON ZATWIERDZONY! KOD: ${randomID}<br><span style="color:var(--neon-cyan);">Teraz oglądaj odcinek i poluj na linie!</span>`;
-                statusDiv.style.color = "#00ff00";
+                checkWinCondition();
                 document.getElementById('btnReset').style.display = 'inline-block';
             } catch (error) { 
                 statusDiv.innerText = "BŁĄD ZAPISU! Spróbuj ponownie."; 
@@ -306,7 +360,7 @@
         }
 
         function resetGame() {
-            if(confirm("Czy na pewno chcesz wyrzucić ten kupon i zacząć od nowa na czysto?")) {
+            if(confirm("Czy na pewno chcesz wyczyścić ten kupon?")) {
                 localStorage.removeItem('kamboBingoCoupon');
                 location.reload();
             }
