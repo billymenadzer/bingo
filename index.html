@@ -14,32 +14,8 @@
             --card-bg: rgba(15, 15, 30, 0.85);
         }
 
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--dark-bg);
-            background-image: url('tlo_kambo.png'); 
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            color: #ffffff;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 40px;
-            background: rgba(10, 10, 18, 0.9);
-            border-bottom: 2px solid var(--neon-cyan);
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
-            backdrop-filter: blur(5px);
-        }
-
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--dark-bg); background-image: url('tlo_kambo.png'); background-size: cover; background-position: center; background-attachment: fixed; color: #ffffff; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: rgba(10, 10, 18, 0.9); border-bottom: 2px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(0, 240, 255, 0.4); backdrop-filter: blur(5px); }
         .game-title { font-size: 2.5em; font-weight: 900; text-transform: uppercase; font-style: italic; color: #fff; text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink); letter-spacing: 3px; }
         .logo-container img { height: 60px; object-fit: contain; filter: drop-shadow(0 0 8px var(--neon-cyan)); }
 
@@ -48,40 +24,29 @@
         .dealer-panel { flex: 1; min-width: 320px; background: var(--card-bg); border: 2px solid var(--neon-pink); border-radius: 12px; padding: 25px; text-align: center; box-shadow: 0 0 25px rgba(255, 0, 127, 0.25); backdrop-filter: blur(10px); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .dealer-avatar { width: 100%; max-width: 260px; border-radius: 8px; border: 3px solid var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan); margin-bottom: 20px; }
         .dealer-title { font-size: 1.1em; text-transform: uppercase; letter-spacing: 2px; color: var(--neon-cyan); margin-bottom: 5px; }
-        .dealer-status { font-size: 1.5em; font-weight: bold; color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.6); margin-bottom: 20px; letter-spacing: 1px; }
-
+        
         .input-group { width: 100%; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
-        input[type="text"] { padding: 12px; border-radius: 6px; border: 1px solid var(--neon-cyan); background: rgba(0,0,0,0.5); color: white; font-size: 1.1em; text-align: center; outline: none; width: 80%; transition: box-shadow 0.3s; }
-        input[type="text"]:focus { box-shadow: 0 0 15px var(--neon-cyan); }
-        input[type="text"]:disabled { opacity: 0.6; cursor: not-allowed; border-color: #555; }
-
+        input[type="text"] { padding: 12px; border-radius: 6px; border: 1px solid var(--neon-cyan); background: rgba(0,0,0,0.5); color: white; font-size: 1.1em; text-align: center; outline: none; width: 80%; }
+        
         .rules-section { margin-top: 25px; padding: 20px; background: rgba(0, 240, 255, 0.05); border: 1px dashed var(--neon-cyan); border-radius: 8px; font-family: 'Courier New', Courier, monospace; text-align: left; font-size: 0.9em; width: 80%; }
         .rules-title { color: var(--neon-cyan); text-transform: uppercase; font-weight: bold; margin-bottom: 10px; display: block; text-align: center; }
 
-        #coupon-status { margin-top: 15px; font-size: 1.1em; font-weight: bold; color: var(--neon-pink); text-shadow: 0 0 5px rgba(255,0,127,0.5); min-height: 24px; white-space: pre-line; transition: all 0.3s ease;}
+        #coupon-status { margin-top: 15px; font-size: 1.1em; font-weight: bold; color: var(--neon-pink); white-space: pre-line; }
 
         .bingo-panel { flex: 2; min-width: 500px; background: var(--card-bg); border: 2px solid var(--neon-cyan); border-radius: 12px; padding: 25px; box-shadow: 0 0 25px rgba(0, 240, 255, 0.25); backdrop-filter: blur(10px); }
         .bingo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
-
-        .bingo-cell { background: rgba(25, 25, 45, 0.75); border: 1px solid rgba(0, 240, 255, 0.4); border-radius: 8px; aspect-ratio: 1.15; display: flex; align-items: center; justify-content: center; font-size: 0.95em; line-height: 1.4; padding: 12px; cursor: pointer; text-align: center; font-weight: 600; transition: all 0.3s ease-in-out; color: #e2e2ff; word-wrap: break-word; user-select: none; }
-        .bingo-cell:hover { background: rgba(255, 0, 127, 0.15); border-color: var(--neon-pink); }
-        .bingo-cell.marked { background: rgba(255, 0, 127, 0.4); border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.8), inset 0 0 10px rgba(255, 0, 127, 0.4); color: #fff; transform: scale(1.03); z-index: 2; }
-        .bingo-cell.winning { background: rgba(0, 240, 255, 0.3); border-color: var(--neon-cyan); box-shadow: 0 0 25px var(--neon-cyan), inset 0 0 15px var(--neon-cyan); animation: win-pulse 0.8s infinite alternate; }
-
-        @keyframes win-pulse { from { transform: scale(1.03); box-shadow: 0 0 15px var(--neon-cyan); } to { transform: scale(1.08); box-shadow: 0 0 35px var(--neon-cyan); } }
-        @keyframes text-pulse { from { text-shadow: 0 0 10px var(--neon-pink); transform: scale(1); } to { text-shadow: 0 0 30px var(--neon-pink), 0 0 10px var(--neon-cyan); transform: scale(1.05); } }
-
+        .bingo-cell { background: rgba(25, 25, 45, 0.75); border: 1px solid rgba(0, 240, 255, 0.4); border-radius: 8px; aspect-ratio: 1.15; display: flex; align-items: center; justify-content: center; font-size: 0.95em; padding: 12px; cursor: pointer; text-align: center; font-weight: 600; color: #e2e2ff; user-select: none; transition: 0.3s; }
+        .bingo-cell.marked { background: rgba(255, 0, 127, 0.4); border-color: var(--neon-pink); }
+        .bingo-cell.winning { background: rgba(0, 240, 255, 0.3); border-color: var(--neon-cyan); animation: win-pulse 0.8s infinite alternate; }
+        
+        @keyframes win-pulse { from { transform: scale(1.03); } to { transform: scale(1.08); } }
+        
         .actions { display: flex; gap: 15px; justify-content: center; width: 100%; flex-wrap: wrap; }
-        button { background: transparent; color: #fff; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; padding: 15px 25px; border-radius: 6px; cursor: pointer; transition: all 0.25s ease; font-size: 0.9em; }
-        button:disabled { display: none; }
-        .btn-generate { border: 2px solid var(--neon-cyan); box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2), 0 0 10px rgba(0, 240, 255, 0.2); }
-        .btn-save { border: 2px solid var(--neon-pink); box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.2), 0 0 10px rgba(255, 0, 127, 0.2); }
-        .btn-reset { border: 2px solid #555; color: #ccc; }
-
-        .footer-section { background: rgba(10, 10, 18, 0.95); border-top: 2px solid var(--neon-pink); padding: 30px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: 40px; }
-        .btn-support { display: inline-block; background: transparent; color: var(--neon-gold); font-weight: bold; text-transform: uppercase; letter-spacing: 2px; padding: 15px 35px; border: 2px solid var(--neon-gold); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-decoration: none; box-shadow: 0 0 15px rgba(255, 193, 7, 0.3); }
-        .btn-support:hover { background: var(--neon-gold); color: var(--dark-bg); box-shadow: 0 0 25px var(--neon-gold); transform: scale(1.05); }
-        .sponsor-logo { max-width: 140px; border-radius: 8px; transition: 0.3s; }
+        button { background: transparent; color: #fff; font-weight: bold; text-transform: uppercase; padding: 15px 25px; border-radius: 6px; cursor: pointer; border: 2px solid var(--neon-cyan); }
+        
+        .footer-section { background: rgba(10, 10, 18, 0.95); border-top: 2px solid var(--neon-pink); padding: 30px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: 40px; }
+        .btn-support { display: inline-block; background: transparent; color: var(--neon-gold); font-weight: bold; text-transform: uppercase; padding: 15px 35px; border: 2px solid var(--neon-gold); border-radius: 8px; text-decoration: none; }
+        .sponsor-logo { max-width: 140px; margin-top: 10px; }
         .footer-text { color: #888; font-size: 0.9em; }
     </style>
 </head>
@@ -102,8 +67,8 @@
             <div id="coupon-status">1. Losuj układ.<br>2. Zatwierdź u Szefa.</div>
             <div class="rules-section">
                 <span class="rules-title">// ZASADY GRY</span>
-                1. Losuj planszę przed odcinkiem.<br>
-                2. Zatwierdź kupon w bazie.<br>
+                1. Losuj planszę przed 07:00.<br>
+                2. Zatwierdź kupon.<br>
                 3. Klikaj pola w trakcie seansu!<br>
                 4. Linia = BINGO (Błękitne światło).
             </div>
@@ -112,22 +77,18 @@
         <div class="bingo-panel">
             <div class="bingo-grid" id="bingo-grid"></div>
             <div class="actions">
-                <button class="btn-generate" id="btnGen" onclick="generateNewCard()">Tasuj hasła</button>
-                <button class="btn-save" id="btnSave" onclick="saveCard()">Zatwierdź u Szefa</button>
-                <button class="btn-reset" id="btnReset" onclick="resetGame()" style="display: none;">Reset Kuponu</button>
+                <button id="btnGen" onclick="generateNewCard()">Tasuj hasła</button>
+                <button id="btnSave" onclick="saveCard()">Zatwierdź u Szefa</button>
+                <button id="btnReset" onclick="resetGame()" style="display: none;">Reset Kuponu</button>
             </div>
         </div>
     </div>
 
     <div class="footer-section">
         <a href="https://buycoffee.to/billymenadzer/" target="_blank" class="btn-support">☕ WESPRZYJ PROJEKT!</a>
-        <a href="wyniki.html" class="btn-support" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">🏆 WYNIKI OSTATNIEGO ODCINKA</a>
-        <div class="sponsor-container">
-            <a href="https://aqfilters.com" target="_blank"><img src="aqfilters.png" alt="AQ Filters" class="sponsor-logo"></a>
-        </div>
-        <div class="footer-text">
-            Billy.com.pl | billymenadzer@proton.me | cenzobot.billy.com.pl | youtube.com/billymenadzer <br> &copy; 2026
-        </div>
+        <a href="wyniki.html" class="btn-support" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">🏆 WYNIKI ODCINKA</a>
+        <a href="https://aqfilters.com" target="_blank"><img src="aqfilters.png" alt="AQ Filters" class="sponsor-logo"></a>
+        <div class="footer-text">Billy.com.pl | billymenadzer@proton.me | cenzobot.billy.com.pl | &copy; 2026</div>
     </div>
 
     <script>
@@ -155,9 +116,18 @@
         let markedCells = new Array(16).fill(false);
         const winningLines = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15], [0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15], [0, 5, 10, 15], [3, 6, 9, 12]];
 
-        function shuffle(array) { return array.sort(() => Math.random() - 0.5); }
+        function isBettingOpen() {
+            const hour = new Date().getHours();
+            return hour < 7;
+        }
 
         function initGame() {
+            if (!isBettingOpen()) {
+                document.getElementById('btnSave').disabled = true;
+                document.getElementById('btnGen').disabled = true;
+                document.getElementById('coupon-status').innerHTML = "ZAKŁADY ZAMKNIĘTE!<br>Kolejny odcinek o 07:00.";
+            }
+
             const savedData = localStorage.getItem('kamboBingoCoupon');
             if (savedData) {
                 const data = JSON.parse(savedData);
@@ -174,13 +144,12 @@
         }
 
         function generateNewCard() {
-            const shuffled = shuffle([...allPhrases]);
+            if (!isBettingOpen()) return;
+            const shuffled = allPhrases.sort(() => Math.random() - 0.5);
             currentCardPhrases = shuffled.slice(0, 16); 
             markedCells = new Array(16).fill(false);
             renderGrid(false);
-            resetStatusUI();
             document.getElementById('coupon-status').innerHTML = "1. Losuj układ.<br>2. Zatwierdź u Szefa.";
-            document.getElementById('btnSave').disabled = false;
         }
 
         function renderGrid(isGameActive) {
@@ -192,68 +161,50 @@
                 cell.id = 'cell-' + i; 
                 cell.innerText = currentCardPhrases[i];
                 if (markedCells[i]) cell.classList.add('marked');
-                if (isGameActive) {
-                    cell.onclick = function() {
-                        this.classList.toggle('marked');
-                        markedCells[i] = !markedCells[i];
-                        updateLocalStorage(); 
-                        checkWinCondition(); 
-                    };
-                } else {
-                    cell.onclick = function() { alert("Najpierw musisz ZATWIERDZIĆ KUPON u Szefa!"); }
-                }
+                cell.onclick = function() {
+                    if (!isGameActive) { alert("Zatwierdź kupon u Szefa!"); return; }
+                    this.classList.toggle('marked');
+                    markedCells[i] = !markedCells[i];
+                    updateLocalStorage(); 
+                    checkWinCondition(); 
+                };
                 grid.appendChild(cell);
             }
         }
 
         function checkWinCondition() {
-            let hasWon = false;
             for (let i = 0; i < 16; i++) document.getElementById('cell-' + i).classList.remove('winning');
             for (let line of winningLines) {
-                const [a, b, c, d] = line;
-                if (markedCells[a] && markedCells[b] && markedCells[c] && markedCells[d]) {
-                    [a, b, c, d].forEach(idx => document.getElementById('cell-' + idx).classList.add('winning'));
-                    hasWon = true;
+                if (line.every(idx => markedCells[idx])) {
+                    line.forEach(idx => document.getElementById('cell-' + idx).classList.add('winning'));
                 }
             }
-            const statusDiv = document.getElementById('coupon-status');
-            if (hasWon) {
-                statusDiv.innerHTML = `🔥🔥 KAMBO BINGO!!! 🔥🔥<br><span style="color:var(--neon-cyan);">Masz pełną linię! Jesteś Szefem!</span>`;
-                statusDiv.style.color = "var(--neon-pink)";
-                statusDiv.style.animation = "text-pulse 1s infinite alternate";
-            } else {
-                const savedData = localStorage.getItem('kamboBingoCoupon');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    resetStatusUI();
-                    statusDiv.innerHTML = `KUPON ZATWIERDZONY! KOD: ${data.id}<br><br><span style="color:var(--neon-cyan);">Poluj na hasełka!</span>`;
-                }
-            }
-        }
-
-        function resetStatusUI() {
-            const statusDiv = document.getElementById('coupon-status');
-            statusDiv.style.animation = "none";
-            statusDiv.style.color = "#00ff00"; 
         }
 
         async function saveCard() {
+            if (!isBettingOpen()) return;
             const nick = document.getElementById('playerNick').value.trim();
             const statusDiv = document.getElementById('coupon-status');
             if (!nick) { statusDiv.innerText = "SZEFIE, NAJPIERW WPISZ NICK!"; return; }
-            document.getElementById('btnSave').disabled = true;
-            document.getElementById('btnGen').disabled = true;
+            
             statusDiv.innerText = "ŁĄCZENIE Z BAZĄ...";
             const randomID = "KB-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+            const today = new Date().toISOString().split('T')[0];
+
             try {
-                const { data, error } = await db.from('kupony').insert([{ nick: nick, kupon_id: randomID, hasla: currentCardPhrases }]);
+                const { error } = await db.from('kupony').insert([{ 
+                    nick: nick, 
+                    kupon_id: randomID, 
+                    hasla: currentCardPhrases,
+                    odcinek_data: today 
+                }]);
                 if (error) throw error; 
                 localStorage.setItem('kamboBingoCoupon', JSON.stringify({ nick: nick, id: randomID, phrases: currentCardPhrases, marked: markedCells }));
                 document.getElementById('playerNick').disabled = true;
                 renderGrid(true); 
-                statusDiv.innerHTML = `KUPON ZATWIERDZONY! KOD: ${randomID}<br><br><span style="color:var(--neon-cyan);">Teraz oglądaj odcinek i poluj na linie!</span>`;
+                statusDiv.innerHTML = "ZATWIERDZONY!";
                 document.getElementById('btnReset').style.display = 'inline-block';
-            } catch (error) { statusDiv.innerText = "BŁĄD ZAPISU! Spróbuj ponownie."; document.getElementById('btnSave').disabled = false; document.getElementById('btnGen').disabled = false; }
+            } catch (error) { statusDiv.innerText = "BŁĄD ZAPISU!"; }
         }
 
         function updateLocalStorage() {
