@@ -24,8 +24,7 @@
         .results-table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: left; }
         .results-table th, .results-table td { padding: 12px 15px; border-bottom: 1px solid #222; }
         .results-table th { background: rgba(0, 240, 255, 0.1); color: var(--neon-cyan); text-transform: uppercase; font-size: 0.9em; letter-spacing: 1px; }
-        .results-table tr:hover { background: rgba(255,255,255,0.02); }
-        .badge-bingo { background: var(--neon-pink); color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; text-shadow: 0 0 5px #000; box-shadow: 0 0 8px var(--neon-pink); }
+        .badge-bingo { background: var(--neon-pink); color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; box-shadow: 0 0 8px var(--neon-pink); }
         #status-msg { text-align: center; font-weight: bold; color: var(--neon-cyan); margin-top: 15px; font-size: 1.2em; }
     </style>
 </head>
@@ -35,26 +34,29 @@
 
     <div class="admin-container">
         <div class="panel-box">
-            <h2>Krok 1: Zaznacz frazy, które padły w dzisiejszym odcinku</h2>
+            <h2>Krok 0: Wybierz datę odcinka</h2>
+            <input type="date" id="episodeDate" style="padding: 10px; border-radius: 6px; background: #111; color: #fff; border: 1px solid var(--neon-cyan); width: 200px;">
+            
+            <h2 style="margin-top: 20px;">Krok 1: Zaznacz frazy, które padły</h2>
             <div class="phrases-selector" id="phrases-grid"></div>
             <button class="btn-action" onclick="settleEpisode()">🚀 Rozlicz Odcinek i Opublikuj Wyniki</button>
             <div id="status-msg"></div>
         </div>
 
         <div class="panel-box">
-            <h2>Krok 2: Wyniki i Tabela Najlepszych Bukmacherów</h2>
+            <h2>Krok 2: Wyniki dla wybranej daty</h2>
             <table class="results-table">
                 <thead>
                     <tr>
                         <th>Pozycja</th>
                         <th>Nick Gracza</th>
                         <th>Trafione Hasła</th>
-                        <th>Wynik (Trafienia)</th>
-                        <th>BINGO (Linia)</th>
+                        <th>Wynik</th>
+                        <th>BINGO</th>
                     </tr>
                 </thead>
                 <tbody id="leaderboard-body">
-                    <tr><td colspan="5" style="text-align: center; color: #555; padding: 30px;">Zaznacz hasła u góry i kliknij przycisk rozliczenia.</td></tr>
+                    <tr><td colspan="5" style="text-align: center; color: #555; padding: 30px;">Wybierz datę i rozlicz odcinek.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -81,118 +83,62 @@
             "Muszę kupić", "Poliakov", "Zawleczki Cambodia"
         ];
 
-        const winningLines = [
-            [0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15], 
-            [0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15], 
-            [0, 5, 10, 15], [3, 6, 9, 12] 
-        ];
+        const winningLines = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15], [0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15], [0, 5, 10, 15], [3, 6, 9, 12]];
 
         function renderPhrasesGrid() {
             const grid = document.getElementById('phrases-grid');
-            const sortedPhrases = [...allPhrases].sort((a, b) => a.localeCompare(b, 'pl'));
-            sortedPhrases.forEach((phrase) => {
+            [...allPhrases].sort((a,b) => a.localeCompare(b, 'pl')).forEach(phrase => {
                 const label = document.createElement('label');
                 label.className = 'phrase-checkbox';
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.value = phrase;
-                checkbox.className = 'phrase-input';
-                label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(phrase));
+                label.innerHTML = `<input type="checkbox" value="${phrase}" class="phrase-input"> ${phrase}`;
                 grid.appendChild(label);
             });
         }
 
         async function settleEpisode() {
             const statusDiv = document.getElementById('status-msg');
-            statusDiv.innerText = "PRZELICZANIE I ZAPISYWANIE WYNIKÓW...";
-            
+            const selectedDate = document.getElementById('episodeDate').value;
+            if(!selectedDate) { alert("Wybierz datę odcinka!"); return; }
+
+            statusDiv.innerText = "POBIERANIE KUPONÓW...";
             const checkedInputs = document.querySelectorAll('.phrase-input:checked');
-            const officialFallenPhrases = Array.from(checkedInputs).map(input => input.value);
-            
-            if (officialFallenPhrases.length === 0) {
-                statusDiv.innerText = "SZEFIE, ZAZNACZ CHOCIAŻ JEDNO HASŁO!";
-                statusDiv.style.color = "var(--neon-pink)";
-                return;
-            }
+            const officialFallenPhrases = Array.from(checkedInputs).map(i => i.value);
 
             try {
-                const { data: kupony, error } = await db.from('kupony').select('*');
+                // Pobieramy kupony tylko dla tej daty
+                const { data: kupony, error } = await db
+                    .from('kupony')
+                    .select('*')
+                    .eq('odcinek_data', selectedDate);
+
                 if (error) throw error;
-                if (!kupony || kupony.length === 0) {
-                    statusDiv.innerText = "BRAK KUPONÓW W BAZIE!";
-                    return;
-                }
+                if (!kupony || kupony.length === 0) { statusDiv.innerText = "BRAK KUPONÓW DLA TEJ DATY!"; return; }
 
-                const processedPlayers = [];
-
-                kupony.forEach(kupon => {
-                    const userPhrases = kupon.hasla; 
-                    let hitsCount = 0;
-                    let matchedIndexes = [];
-                    let matchedTextList = [];
-
-                    userPhrases.forEach((phrase, index) => {
-                        if (officialFallenPhrases.includes(phrase)) {
-                            hitsCount++;
-                            matchedIndexes.push(index); 
-                            matchedTextList.push(phrase);
-                        }
+                const processedPlayers = kupony.map(kupon => {
+                    const userPhrases = kupon.hasla;
+                    let hits = 0, matchedIdx = [], matchedText = [];
+                    userPhrases.forEach((p, idx) => {
+                        if (officialFallenPhrases.includes(p)) { hits++; matchedIdx.push(idx); matchedText.push(p); }
                     });
+                    let bingo = winningLines.some(line => line.every(idx => matchedIdx.includes(idx)));
+                    return { nick: kupon.nick, score: hits, hasBingo: bingo, matchedTexts: matchedText.join(', ') };
+                }).sort((a,b) => (b.hasBingo - a.hasBingo) || (b.score - a.score));
 
-                    let hasBingo = false;
-                    for (let line of winningLines) {
-                        if (line.every(idx => matchedIndexes.includes(idx))) {
-                            hasBingo = true;
-                            break; 
-                        }
-                    }
-
-                    processedPlayers.push({
-                        nick: kupon.nick,
-                        score: hitsCount,
-                        hasBingo: hasBingo,
-                        matchedTexts: matchedTextList.join(', ')
-                    });
-                });
-
-                processedPlayers.sort((a, b) => {
-                    if (a.hasBingo !== b.hasBingo) return b.hasBingo - a.hasBingo; 
-                    return b.score - a.score; 
-                });
-
-                // ZAPIS DO NOWEJ TABELI 'ranking' DLA WIDZÓW
-                const { error: rankError } = await db.from('ranking').upsert([
-                    { id: 1, zwyciezcy: processedPlayers }
-                ]);
+                // Zapisujemy ranking pod datą
+                const { error: rankError } = await db.from('ranking').insert([{ 
+                    zwyciezcy: processedPlayers, 
+                    odcinek_data: selectedDate 
+                }]);
                 
                 if (rankError) throw rankError;
-
                 renderLeaderboard(processedPlayers);
-                statusDiv.innerText = `SUKCES! WYNIKI WYSŁANE NA STRONĘ DLA WIDZÓW.`;
-                statusDiv.style.color = "#00ff00";
-
-            } catch (error) {
-                console.error("Błąd:", error);
-                statusDiv.innerText = "BŁĄD ZAPISU! Upewnij się, że masz tabelę 'ranking' (bez RLS).";
-                statusDiv.style.color = "var(--neon-pink)";
-            }
+                statusDiv.innerText = "SUKCES! WYNIKI OPUBLIKOWANE.";
+            } catch (err) { statusDiv.innerText = "BŁĄD: " + err.message; }
         }
 
         function renderLeaderboard(players) {
             const tbody = document.getElementById('leaderboard-body');
-            tbody.innerHTML = '';
-            players.forEach((player, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>#${index + 1}</strong></td>
-                    <td style="color: var(--neon-cyan); font-weight: bold;">${player.nick}</td>
-                    <td style="font-size: 0.85em; color: #ccc;">${player.matchedTexts || '-'}</td>
-                    <td><strong>${player.score} / 16</strong></td>
-                    <td>${player.hasBingo ? '<span class="badge-bingo">BINGO! 🎉</span>' : '-'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+            tbody.innerHTML = players.map((p, i) => `<tr><td>#${i+1}</td><td>${p.nick}</td><td>${p.matchedTexts}</td><td>${p.score}</td><td>${p.hasBingo ? '<span class="badge-bingo">BINGO!</span>' : '-'}</td></tr>`).join('');
         }
 
         renderPhrasesGrid();
