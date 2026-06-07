@@ -20,6 +20,9 @@
         
         h2 { text-align: center; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 2px; margin-top: 0; margin-bottom: 30px; text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); font-size: 2em;}
         
+        /* Styl datownika */
+        #datePicker { display: block; margin: 0 auto 20px auto; padding: 12px; border-radius: 6px; background: #111; color: #fff; border: 1px solid var(--neon-cyan); font-size: 1.1em; cursor: pointer; }
+
         .results-table { width: 100%; border-collapse: collapse; text-align: left; }
         .results-table th, .results-table td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .results-table th { background: rgba(0, 240, 255, 0.1); color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 1px; }
@@ -43,7 +46,10 @@
 
     <div class="main-container">
         <div class="leaderboard-panel">
-            <h2>🏆 Loża Szyderców - Wyniki Ostatniego Odcinka 🏆</h2>
+            <h2>🏆 Loża Szyderców</h2>
+            
+            <input type="date" id="datePicker" onchange="fetchResults(this.value)">
+            
             <div style="overflow-x: auto;">
                 <table class="results-table">
                     <thead>
@@ -55,7 +61,7 @@
                         </tr>
                     </thead>
                     <tbody id="public-leaderboard">
-                        <tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Ładowanie wyników z bazy danych Szefa...</td></tr>
+                        <tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Wybierz datę, aby zobaczyć wyniki...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -68,15 +74,27 @@
         const supabaseKey = 'sb_publishable_l2Mh9vUD84rA3CUiuj_LAQ_7z-orOnQ'; 
         const db = supabase.createClient(supabaseUrl, supabaseKey);
 
-        async function fetchResults() {
+        async function fetchResults(selectedDate) {
             const tbody = document.getElementById('public-leaderboard');
+            
+            // Ustaw datę na dzisiejszą, jeśli użytkownik nie wybrał innej
+            if (!selectedDate) {
+                selectedDate = new Date().toISOString().split('T')[0];
+                document.getElementById('datePicker').value = selectedDate;
+            }
+
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Ładowanie...</td></tr>';
+
             try {
-                // Pobieramy pierwszy wiersz z tabeli ranking, w którym zapisaliśmy JSON z wynikami
-                const { data, error } = await db.from('ranking').select('zwyciezcy').eq('id', 1).single();
+                // Pobieramy wyniki dla wybranej daty
+                const { data, error } = await db
+                    .from('ranking')
+                    .select('zwyciezcy')
+                    .eq('odcinek_data', selectedDate) // <-- KLUCZOWA ZMIANA
+                    .single();
                 
-                if (error) throw error;
-                if (!data || !data.zwyciezcy || data.zwyciezcy.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Szef nie rozliczył jeszcze żadnego odcinka!</td></tr>';
+                if (error) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Brak wyników dla tej daty.</td></tr>';
                     return;
                 }
 
@@ -84,26 +102,24 @@
                 const players = data.zwyciezcy;
 
                 players.forEach((player, index) => {
-                    let positionStyle = index === 0 ? 'font-size: 1.5em; color: var(--neon-gold); text-shadow: 0 0 10px var(--neon-gold);' : 
-                                        index === 1 ? 'font-size: 1.2em; color: silver;' : 
-                                        index === 2 ? 'font-size: 1.1em; color: #cd7f32;' : ''; // Podium colors
-                    
+                    let posStyle = index === 0 ? 'font-size: 1.5em; color: var(--neon-gold);' : ''; 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td style="${positionStyle} font-weight: bold;">#${index + 1}</td>
+                        <td style="${posStyle} font-weight: bold;">#${index + 1}</td>
                         <td style="color: var(--neon-cyan); font-weight: bold; font-size: 1.1em;">${player.nick}</td>
                         <td><strong>${player.score} / 16</strong><br><span style="font-size: 0.8em; color: #aaa;">${player.matchedTexts || 'Brak'}</span></td>
-                        <td>${player.hasBingo ? '<span class="badge-bingo">BINGO! 🎉</span>' : ''}</td>
+                        <td>${player.hasBingo ? '<span class="badge-bingo">BINGO! 🎉</span>' : '-'}</td>
                     `;
                     tbody.appendChild(tr);
                 });
 
             } catch (error) {
-                console.error("Błąd ładowania wyników:", error);
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--neon-pink);">Błąd połączenia z bazą. Spróbuj odświeżyć stronę.</td></tr>';
+                console.error("Błąd:", error);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--neon-pink);">Błąd bazy danych.</td></tr>';
             }
         }
 
+        // Uruchom przy starcie
         fetchResults();
     </script>
 </body>
