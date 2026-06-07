@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAMBO BINGO!</title>
+    <!-- Ładowanie biblioteki Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --neon-pink: #ff007f;
+            --neon-cyan: #00f0ff;
+            --neon-gold: #ffc107; 
+            --dark-bg: #0a0a12;
+            --card-bg: rgba(15, 15, 30, 0.85);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--dark-bg);
+            background-image: url('tlo_kambo.png'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            background: rgba(10, 10, 18, 0.9);
+            border-bottom: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+            backdrop-filter: blur(5px);
+        }
+
+        .game-title {
+            font-size: 2.5em;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-style: italic;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+            letter-spacing: 3px;
+        }
+
+        .logo-container img { height: 60px; object-fit: contain; filter: drop-shadow(0 0 8px var(--neon-cyan)); }
+
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            max-width: 1400px;
+            width: 95%;
+            margin: 40px auto;
+            gap: 30px;
+            flex-wrap: wrap;
+            flex: 1; 
+        }
+
+        .dealer-panel {
+            flex: 1;
+            min-width: 320px;
+            background: var(--card-bg);
+            border: 2px solid var(--neon-pink);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.25);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dealer-avatar { width: 100%; max-width: 260px; border-radius: 8px; border: 3px solid var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan); margin-bottom: 20px; }
+        .dealer-title { font-size: 1.1em; text-transform: uppercase; letter-spacing: 2px; color: var(--neon-cyan); margin-bottom: 5px; }
+        .dealer-status { font-size: 1.5em; font-weight: bold; color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.6); margin-bottom: 20px; letter-spacing: 1px; }
+
+        .input-group { width: 100%; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+
+        input[type="text"] {
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--neon-cyan);
+            background: rgba(0,0,0,0.5);
+            color: white;
+            font-size: 1.1em;
+            text-align: center;
+            outline: none;
+            width: 80%;
+            transition: box-shadow 0.3s;
+        }
+        input[type="text"]:focus { box-shadow: 0 0 15px var(--neon-cyan); }
+        input[type="text"]:disabled { opacity: 0.6; cursor: not-allowed; border-color: #555; }
+
+        #coupon-status { margin-top: 15px; font-size: 1.1em; font-weight: bold; color: var(--neon-pink); text-shadow: 0 0 5px rgba(255,0,127,0.5); min-height: 24px; white-space: pre-line; transition: all 0.3s ease;}
+
+        .bingo-panel {
+            flex: 2;
+            min-width: 500px;
+            background: var(--card-bg);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);
+            backdrop-filter: blur(10px);
+        }
+
+        .bingo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+
+        .bingo-cell {
+            background: rgba(25, 25, 45, 0.75);
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            border-radius: 8px;
+            aspect-ratio: 1.15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95em;
+            line-height: 1.4;
+            padding: 12px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s ease-in-out;
+            color: #e2e2ff;
+            word-wrap: break-word;
+            user-select: none;
+        }
+
+        .bingo-cell:hover { background: rgba(255, 0, 127, 0.15); border-color: var(--neon-pink); }
+
+        .bingo-cell.marked {
+            background: rgba(255, 0, 127, 0.4);
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.8), inset 0 0 10px rgba(255, 0, 127, 0.4);
+            color: #fff;
+            transform: scale(1.03);
+            z-index: 2;
+        }
+
+        .bingo-cell.winning {
+            background: rgba(0, 240, 255, 0.3);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 25px var(--neon-cyan), inset 0 0 15px var(--neon-cyan);
+            color: #fff;
+            animation: win-pulse 0.8s infinite alternate;
+            z-index: 3;
+        }
+
+        @keyframes win-pulse {
+            from { transform: scale(1.03); box-shadow: 0 0 15px var(--neon-cyan); }
+            to { transform: scale(1.08); box-shadow: 0 0 35px var(--neon-cyan); }
+        }
+
+        @keyframes text-pulse {
+            from { text-shadow: 0 0 10px var(--neon-pink); transform: scale(1); }
+            to { text-shadow: 0 0 30px var(--neon-pink), 0 0 10px var(--neon-cyan); transform: scale(1.05); }
+        }
+
+        .actions { display: flex; gap: 15px; justify-content: center; width: 100%; flex-wrap: wrap; }
+
+        button { background: transparent; color: #fff; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; padding: 15px 25px; border-radius: 6px; cursor: pointer; transition: all 0.25s ease; font-size: 0.9em; }
+        button:disabled { display: none; }
+
+        .btn-generate { border: 2px solid var(--neon-cyan); box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2), 0 0 10px rgba(0, 240, 255, 0.2); }
+        .btn-generate:hover:not(:disabled) { background: var(--neon-cyan); color: var(--dark-bg); box-shadow: 0 0 20px var(--neon-cyan); }
+
+        .btn-save { border: 2px solid var(--neon-pink); box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.2), 0 0 10px rgba(255, 0, 127, 0.2); }
+        .btn-save:hover:not(:disabled) { background: var(--neon-pink); color: #fff; box-shadow: 0 0 20px var(--neon-pink); }
+
+        .btn-reset { border: 2px solid #555; color: #ccc; }
+        .btn-reset:hover { background: #333; color: #fff; border-color: #888; }
+
+        /* --- STOPKA, WSPARCIE I SPONSOR --- */
+        .footer-section {
+            background: rgba(10, 10, 18, 0.95);
+            border-top: 2px solid var(--neon-pink);
+            padding: 30px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            box-shadow: 0 -5px 20px rgba(255, 0, 127, 0.2);
+            margin-top: 40px;
+        }
+
+        .btn-support {
+            display: inline-block;
+            background: transparent;
+            color: var(--neon-gold);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 15px 35px;
+            border: 2px solid var(--neon-gold);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+            text-decoration: none;
+            box-shadow: inset 0 0 10px rgba(255, 193, 7, 0.2), 0 0 15px rgba(255, 193, 7, 0.3);
+        }
+
+        .btn-support:hover {
+            background: var(--neon-gold);
+            color: var(--dark-bg);
+            box-shadow: 0 0 25px var(--neon-gold);
+            transform: scale(1.05);
+        }
+
+        .sponsor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .sponsor-label {
+            font-size: 0.85em;
+            color: var(--neon-cyan);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            opacity: 0.8;
+        }
+
+        .sponsor-logo {
+            max-width: 140px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .sponsor-logo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+        }
+
+        .footer-text {
+            color: #888;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        .footer-text a {
+            color: #aaa;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-text a:hover {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 5px var(--neon-cyan);
+        }
+
+        .footer-divider {
+            margin: 0 8px;
+            color: var(--neon-pink);
+            opacity: 0.7;
+        }
+
+        @media (max-width: 850px) {
+            .main-container { flex-direction: column; margin: 20px auto; }
+            .bingo-panel { min-width: 100%; padding: 15px; }
+            .bingo-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            header { flex-direction: column; gap: 15px; text-align: center; }
+            .footer-text { line-height: 1.8; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="game-title">KAMBO BINGO!</div>
+        <div class="logo-container">
+            <img src="Billy_logo_2.png" alt="Billy Logo">
+        </div>
+    </header>
+
+    <div class="main-container">
+        
+        <div class="dealer-panel">
+            <div class="dealer-title">System Weryfikacji AI</div>
+            <div class="dealer-status">ZAKŁADY OTWARTE</div>
+            <img src="gapa3.png" alt="Bukmacher" class="dealer-avatar">
+            
+            <div class="input-group">
+                <input type="text" id="playerNick" placeholder="Wpisz swój nick z czatu">
+            </div>
+            
+            <div id="coupon-status">1. Wylosuj układ haseł.<br>2. Zatwierdź u Szefa przed odcinkiem!</div>
+        </div>
+
+        <div class="bingo-panel">
+            <div class="bingo-grid" id="bingo-grid">
+                <!-- JavaScript wyrenderuje tutaj kafelki -->
+            </div>
+
+            <div class="actions">
+                <button class="btn-generate" id="btnGen" onclick="generateNewCard()">Tasuj hasła</button>
+                <button class="btn-save" id="btnSave" onclick="saveCard()">Zatwierdź u Szefa</button>
+                <button class="btn-reset" id="btnReset" onclick="resetGame()" style="display: none;">Wyczyść Kupon (Nowa Gra)</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer-section">
+        <a href="https://buycoffee.to/billymenadzer/" target="_blank" class="btn-support">☕ WESPRZYJ PROJEKT!</a>
+        <div class="footer-section">
+    <a href="https://buycoffee.to/billymenadzer/" target="_blank" class="btn-support">☕ WESPRZYJ PROJEKT!</a>
+    
+    <a href="wyniki.html" class="btn-support" style="border-color: var(--neon-cyan); color: var(--neon-cyan); margin-top: -10px; box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2);">🏆 WYNIKI OSTATNIEGO ODCINKA</a>
+        <!-- SEKCJA SPONSORA -->
+        <div class="sponsor-container">
+            <div class="sponsor-label">Sponsor Główny Projektu</div>
+            <a href="https://aqfilters.com" target="_blank">
+                <img src="aqfilters.png" alt="AQ Filters" class="sponsor-logo">
+            </a>
+        </div>
+        
+        <div class="footer-text">
+            <a href="http://Billy.com.pl" target="_blank">Billy.com.pl</a>
+            <span class="footer-divider">|</span>
+            <a href="mailto:billymenadzer@proton.me">billymenadzer@proton.me</a>
+            <span class="footer-divider">|</span>
+            <a href="http://cenzobot.billy.com.pl" target="_blank">cenzobot.billy.com.pl</a>
+            <span class="footer-divider">|</span>
+            <a href="https://youtube.com/billymenadzer" target="_blank">youtube.com/billymenadzer</a>
+            <br><br>
+            &copy; 2026
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURACJA BAZY DANYCH SUPABASE ---
+        const supabaseUrl = 'https://szzauvjeogsdpleebrgo.supabase.co';
+        const supabaseKey = 'sb_publishable_l2Mh9vUD84rA3CUiuj_LAQ_7z-orOnQ'; 
+        const db = supabase.createClient(supabaseUrl, supabaseKey);
+
+        const allPhrases = [
+            "Szkoła surykatki", "Adam", "Spotkanie biznesowe", "Prysznic", "Junku, gdzie jesteś?",
+            "Jedzenie dla Junku", "Angkor Wat", "Rynek", "Kawa", "Robaki dla surykatek",
+            "Mamy gości", "Asia się nagrywa", "Asia patrzy z pogardą", "Ooo kotki!",
+            "Niestety, ale...", "Ulewa", "Zupa", "Inwestor", "Nie sprzedaję farmy",
+            "Sprzedaję farmę", "Mama Juny", "Alan i Eco", "Ewa", "Przepraszam państwa, ale...",
+            "Brenda", "Nic nie jadłem", "Pyszne jedzonko", "Basen", "Biznes lubi ciszę",
+            "Musicie państwo zrozumieć...", "Sklep z filtrami", "Nasze kiszonki", "Burgery",
+            "Paluchy w zbliżeniu", "Lekarz / szpital / ciśnienie", "Motocykl", "Mamy problem",
+            "Sklep AQ", "Fryzjer", "Nowe koszulki", "Nowe buty", "Problem z prądem",
+            "Problem z internetem", "Urodziny Juny", "Tharong", "Wujek od giftów",
+            "Swimming pool", "Prezenty", "Źli Khmerzy", "Nowe T-shirty", "Waterproof jacket",
+            "Gas station", "Ekspres do kawy", "Mamy gości niespodziewanie", "Muszę jechać",
+            "Muszę kupić", "Poliakov", "Zawleczki Cambodia"
+        ];
+
+        let currentCardPhrases = [];
+        let markedCells = new Array(16).fill(false);
+
+        const winningLines = [
+            [0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15], 
+            [0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15], 
+            [0, 5, 10, 15], [3, 6, 9, 12] 
+        ];
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function initGame() {
+            const savedData = localStorage.getItem('kamboBingoCoupon');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                currentCardPhrases = data.phrases;
+                markedCells = data.marked || new Array(16).fill(false);
+                
+                document.getElementById('playerNick').value = data.nick;
+                document.getElementById('playerNick').disabled = true; 
+                
+                renderGrid(true); 
+                checkWinCondition(); 
+                
+                document.getElementById('btnGen').disabled = true;
+                document.getElementById('btnSave').disabled = true;
+                document.getElementById('btnReset').style.display = 'inline-block';
+            } else {
+                generateNewCard();
+            }
+        }
+
+        function generateNewCard() {
+            const shuffled = shuffle([...allPhrases]);
+            currentCardPhrases = shuffled.slice(0, 16); 
+            markedCells = new Array(16).fill(false);
+            renderGrid(false);
+            
+            resetStatusUI();
+            document.getElementById('coupon-status').innerHTML = "1. Wylosuj układ haseł.<br>2. Zatwierdź u Szefa przed odcinkiem!";
+            document.getElementById('btnSave').disabled = false;
+        }
+
+        function renderGrid(isGameActive) {
+            const grid = document.getElementById('bingo-grid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 16; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'bingo-cell';
+                cell.id = 'cell-' + i; 
+                cell.innerText = currentCardPhrases[i];
+                
+                if (markedCells[i]) {
+                    cell.classList.add('marked');
+                }
+                
+                if (isGameActive) {
+                    cell.onclick = function() {
+                        this.classList.toggle('marked');
+                        markedCells[i] = !markedCells[i];
+                        updateLocalStorage(); 
+                        checkWinCondition(); 
+                    };
+                } else {
+                    cell.onclick = function() {
+                        alert("Najpierw musisz ZATWIERDZIĆ KUPON u Szefa, żeby zacząć polowanie na hasełka!");
+                    }
+                }
+                grid.appendChild(cell);
+            }
+        }
+
+        function checkWinCondition() {
+            let hasWon = false;
+            
+            for (let i = 0; i < 16; i++) {
+                document.getElementById('cell-' + i).classList.remove('winning');
+            }
+
+            for (let line of winningLines) {
+                const [a, b, c, d] = line;
+                if (markedCells[a] && markedCells[b] && markedCells[c] && markedCells[d]) {
+                    document.getElementById('cell-' + a).classList.add('winning');
+                    document.getElementById('cell-' + b).classList.add('winning');
+                    document.getElementById('cell-' + c).classList.add('winning');
+                    document.getElementById('cell-' + d).classList.add('winning');
+                    hasWon = true;
+                }
+            }
+
+            const statusDiv = document.getElementById('coupon-status');
+            
+            if (hasWon) {
+                statusDiv.innerHTML = `🔥🔥 KAMBO BINGO!!! 🔥🔥<br><span style="color:var(--neon-cyan);">Masz pełną linię! Jesteś Szefem!</span>`;
+                statusDiv.style.color = "var(--neon-pink)";
+                statusDiv.style.fontSize = "1.3em";
+                statusDiv.style.animation = "text-pulse 1s infinite alternate";
+            } else {
+                const savedData = localStorage.getItem('kamboBingoCoupon');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    resetStatusUI();
+                    statusDiv.innerHTML = `KUPON W BAZIE! KOD: ${data.id}<br><br><span style="color:var(--neon-cyan);">Poluj na hasełka! Gra zapisuje stan w locie.</span>`;
+                }
+            }
+        }
+
+        function resetStatusUI() {
+            const statusDiv = document.getElementById('coupon-status');
+            statusDiv.style.animation = "none";
+            statusDiv.style.fontSize = "1.1em";
+            statusDiv.style.color = "#00ff00"; 
+        }
+
+        async function saveCard() {
+            const nick = document.getElementById('playerNick').value.trim();
+            const statusDiv = document.getElementById('coupon-status');
+            
+            if (!nick) {
+                statusDiv.innerText = "SZEFIE, NAJPIERW WPISZ NICK!";
+                statusDiv.style.color = "var(--neon-pink)";
+                return; 
+            }
+
+            document.getElementById('btnSave').disabled = true;
+            document.getElementById('btnGen').disabled = true;
+            statusDiv.innerText = "ŁĄCZENIE Z BAZĄ... PRZYJMOWANIE ZAKŁADU!";
+            statusDiv.style.color = "var(--neon-cyan)";
+
+            const randomID = "KB-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+            try {
+                const { data, error } = await db
+                    .from('kupony') 
+                    .insert([
+                        { nick: nick, kupon_id: randomID, hasla: currentCardPhrases }
+                    ]);
+
+                if (error) throw error; 
+
+                const localData = {
+                    nick: nick, id: randomID, phrases: currentCardPhrases, marked: markedCells
+                };
+                localStorage.setItem('kamboBingoCoupon', JSON.stringify(localData));
+
+                document.getElementById('playerNick').disabled = true;
+                renderGrid(true); 
+                
+                resetStatusUI();
+                statusDiv.innerHTML = `KUPON ZATWIERDZONY! KOD: ${randomID}<br><br><span style="color:var(--neon-cyan);">Teraz oglądaj odcinek i poluj na linie!</span>`;
+                
+                document.getElementById('btnReset').style.display = 'inline-block';
+
+            } catch (error) {
+                console.error("Szczegóły błędu:", error);
+                statusDiv.innerText = "BŁĄD ZAPISU! Spróbuj ponownie.";
+                statusDiv.style.color = "var(--neon-pink)";
+                
+                document.getElementById('btnSave').disabled = false;
+                document.getElementById('btnGen').disabled = false;
+            }
+        }
+
+        function updateLocalStorage() {
+            const savedData = localStorage.getItem('kamboBingoCoupon');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                data.marked = markedCells; 
+                localStorage.setItem('kamboBingoCoupon', JSON.stringify(data));
+            }
+        }
+
+        function resetGame() {
+            if(confirm("Czy na pewno chcesz wyrzucić ten kupon i zacząć od nowa na czysto?")) {
+                localStorage.removeItem('kamboBingoCoupon');
+                document.getElementById('playerNick').disabled = false;
+                document.getElementById('playerNick').value = "";
+                document.getElementById('btnGen').disabled = false;
+                document.getElementById('btnSave').disabled = false;
+                document.getElementById('btnReset').style.display = 'none';
+                generateNewCard();
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>

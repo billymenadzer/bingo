@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PANEL SZEFA - KAMBO BINGO</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --neon-pink: #ff007f; --neon-cyan: #00f0ff; --neon-yellow: #ffeb3b;
+            --dark-bg: #06060c; --card-bg: rgba(20, 20, 35, 0.9);
+        }
+        body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background-color: var(--dark-bg); color: #fff; margin: 0; padding: 30px; }
+        h1 { text-align: center; color: var(--neon-yellow); text-shadow: 0 0 10px rgba(255, 235, 59, 0.5); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; }
+        .admin-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
+        .panel-box { background: var(--card-bg); border: 2px solid var(--neon-cyan); border-radius: 12px; padding: 25px; box-shadow: 0 0 15px rgba(0, 240, 255, 0.15); }
+        .panel-box h2 { margin-top: 0; color: var(--neon-cyan); border-bottom: 1px solid #333; padding-bottom: 10px; text-transform: uppercase; font-size: 1.2em; }
+        .phrases-selector { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .phrase-checkbox { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; cursor: pointer; transition: background 0.2s; border: 1px solid transparent; }
+        .phrase-checkbox:hover { background: rgba(0, 240, 255, 0.1); border-color: rgba(0, 240, 255, 0.3); }
+        .phrase-checkbox input { width: 18px; height: 18px; cursor: pointer; }
+        .btn-action { background: transparent; color: var(--neon-yellow); border: 2px solid var(--neon-yellow); padding: 15px 40px; font-weight: bold; font-size: 1.1em; text-transform: uppercase; border-radius: 6px; cursor: pointer; display: block; margin: 20px auto 0 auto; transition: all 0.3s; box-shadow: 0 0 10px rgba(255, 235, 59, 0.2); }
+        .btn-action:hover { background: var(--neon-yellow); color: #000; box-shadow: 0 0 25px var(--neon-yellow); }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: left; }
+        .results-table th, .results-table td { padding: 12px 15px; border-bottom: 1px solid #222; }
+        .results-table th { background: rgba(0, 240, 255, 0.1); color: var(--neon-cyan); text-transform: uppercase; font-size: 0.9em; letter-spacing: 1px; }
+        .results-table tr:hover { background: rgba(255,255,255,0.02); }
+        .badge-bingo { background: var(--neon-pink); color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; text-shadow: 0 0 5px #000; box-shadow: 0 0 8px var(--neon-pink); }
+        #status-msg { text-align: center; font-weight: bold; color: var(--neon-cyan); margin-top: 15px; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+
+    <h1>Kambo Bingo - Panel Zarządzania Szefa</h1>
+
+    <div class="admin-container">
+        <div class="panel-box">
+            <h2>Krok 1: Zaznacz frazy, które padły w dzisiejszym odcinku</h2>
+            <div class="phrases-selector" id="phrases-grid"></div>
+            <button class="btn-action" onclick="settleEpisode()">🚀 Rozlicz Odcinek i Opublikuj Wyniki</button>
+            <div id="status-msg"></div>
+        </div>
+
+        <div class="panel-box">
+            <h2>Krok 2: Wyniki i Tabela Najlepszych Bukmacherów</h2>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Pozycja</th>
+                        <th>Nick Gracza</th>
+                        <th>Trafione Hasła</th>
+                        <th>Wynik (Trafienia)</th>
+                        <th>BINGO (Linia)</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <tr><td colspan="5" style="text-align: center; color: #555; padding: 30px;">Zaznacz hasła u góry i kliknij przycisk rozliczenia.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://szzauvjeogsdpleebrgo.supabase.co';
+        const supabaseKey = 'sb_publishable_l2Mh9vUD84rA3CUiuj_LAQ_7z-orOnQ'; 
+        const db = supabase.createClient(supabaseUrl, supabaseKey);
+
+        const allPhrases = [
+            "Szkoła surykatki", "Adam", "Spotkanie biznesowe", "Prysznic", "Junku, gdzie jesteś?",
+            "Jedzenie dla Junku", "Angkor Wat", "Rynek", "Kawa", "Robaki dla surykatek",
+            "Mamy gości", "Asia się nagrywa", "Asia patrzy z pogardą", "Ooo kotki!",
+            "Niestety, ale...", "Ulewa", "Zupa", "Inwestor", "Nie sprzedaję farmy",
+            "Sprzedaję farmę", "Mama Juny", "Alan i Eco", "Ewa", "Przepraszam państwa, ale...",
+            "Brenda", "Nic nie jadłem", "Pyszne jedzonko", "Basen", "Biznes lubi ciszę",
+            "Musicie państwo zrozumieć...", "Sklep z filtrami", "Nasze kiszonki", "Burgery",
+            "Paluchy w zbliżeniu", "Lekarz / szpital / ciśnienie", "Motocykl", "Mamy problem",
+            "Sklep AQ", "Fryzjer", "Nowe koszulki", "Nowe buty", "Problem z prądem",
+            "Problem z internetem", "Urodziny Juny", "Tharong", "Wujek od giftów",
+            "Swimming pool", "Prezenty", "Źli Khmerzy", "Nowe T-shirty", "Waterproof jacket",
+            "Gas station", "Ekspres do kawy", "Mamy gości niespodziewanie", "Muszę jechać",
+            "Muszę kupić", "Poliakov", "Zawleczki Cambodia"
+        ];
+
+        const winningLines = [
+            [0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15], 
+            [0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15], 
+            [0, 5, 10, 15], [3, 6, 9, 12] 
+        ];
+
+        function renderPhrasesGrid() {
+            const grid = document.getElementById('phrases-grid');
+            const sortedPhrases = [...allPhrases].sort((a, b) => a.localeCompare(b, 'pl'));
+            sortedPhrases.forEach((phrase) => {
+                const label = document.createElement('label');
+                label.className = 'phrase-checkbox';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = phrase;
+                checkbox.className = 'phrase-input';
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(phrase));
+                grid.appendChild(label);
+            });
+        }
+
+        async function settleEpisode() {
+            const statusDiv = document.getElementById('status-msg');
+            statusDiv.innerText = "PRZELICZANIE I ZAPISYWANIE WYNIKÓW...";
+            
+            const checkedInputs = document.querySelectorAll('.phrase-input:checked');
+            const officialFallenPhrases = Array.from(checkedInputs).map(input => input.value);
+            
+            if (officialFallenPhrases.length === 0) {
+                statusDiv.innerText = "SZEFIE, ZAZNACZ CHOCIAŻ JEDNO HASŁO!";
+                statusDiv.style.color = "var(--neon-pink)";
+                return;
+            }
+
+            try {
+                const { data: kupony, error } = await db.from('kupony').select('*');
+                if (error) throw error;
+                if (!kupony || kupony.length === 0) {
+                    statusDiv.innerText = "BRAK KUPONÓW W BAZIE!";
+                    return;
+                }
+
+                const processedPlayers = [];
+
+                kupony.forEach(kupon => {
+                    const userPhrases = kupon.hasla; 
+                    let hitsCount = 0;
+                    let matchedIndexes = [];
+                    let matchedTextList = [];
+
+                    userPhrases.forEach((phrase, index) => {
+                        if (officialFallenPhrases.includes(phrase)) {
+                            hitsCount++;
+                            matchedIndexes.push(index); 
+                            matchedTextList.push(phrase);
+                        }
+                    });
+
+                    let hasBingo = false;
+                    for (let line of winningLines) {
+                        if (line.every(idx => matchedIndexes.includes(idx))) {
+                            hasBingo = true;
+                            break; 
+                        }
+                    }
+
+                    processedPlayers.push({
+                        nick: kupon.nick,
+                        score: hitsCount,
+                        hasBingo: hasBingo,
+                        matchedTexts: matchedTextList.join(', ')
+                    });
+                });
+
+                processedPlayers.sort((a, b) => {
+                    if (a.hasBingo !== b.hasBingo) return b.hasBingo - a.hasBingo; 
+                    return b.score - a.score; 
+                });
+
+                // ZAPIS DO NOWEJ TABELI 'ranking' DLA WIDZÓW
+                const { error: rankError } = await db.from('ranking').upsert([
+                    { id: 1, zwyciezcy: processedPlayers }
+                ]);
+                
+                if (rankError) throw rankError;
+
+                renderLeaderboard(processedPlayers);
+                statusDiv.innerText = `SUKCES! WYNIKI WYSŁANE NA STRONĘ DLA WIDZÓW.`;
+                statusDiv.style.color = "#00ff00";
+
+            } catch (error) {
+                console.error("Błąd:", error);
+                statusDiv.innerText = "BŁĄD ZAPISU! Upewnij się, że masz tabelę 'ranking' (bez RLS).";
+                statusDiv.style.color = "var(--neon-pink)";
+            }
+        }
+
+        function renderLeaderboard(players) {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+            players.forEach((player, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>#${index + 1}</strong></td>
+                    <td style="color: var(--neon-cyan); font-weight: bold;">${player.nick}</td>
+                    <td style="font-size: 0.85em; color: #ccc;">${player.matchedTexts || '-'}</td>
+                    <td><strong>${player.score} / 16</strong></td>
+                    <td>${player.hasBingo ? '<span class="badge-bingo">BINGO! 🎉</span>' : '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        renderPhrasesGrid();
+    </script>
+</body>
+</html>
