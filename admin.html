@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PANEL SZEFA - KAMBO BINGO</title>
+    <title>PANEL SZEFA - KAMBO BINGO 3x3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -30,7 +30,7 @@
 </head>
 <body>
 
-    <h1>Kambo Bingo - Panel Zarządzania Szefa</h1>
+    <h1>Kambo Bingo - Panel Szefa (3x3)</h1>
 
     <div class="admin-container">
         <div class="panel-box">
@@ -47,13 +47,7 @@
             <h2>Krok 2: Wyniki dla wybranej daty</h2>
             <table class="results-table">
                 <thead>
-                    <tr>
-                        <th>Pozycja</th>
-                        <th>Nick Gracza</th>
-                        <th>Trafione Hasła</th>
-                        <th>Wynik</th>
-                        <th>BINGO</th>
-                    </tr>
+                    <tr><th>Pozycja</th><th>Nick Gracza</th><th>Trafione Hasła</th><th>Wynik</th><th>BINGO</th></tr>
                 </thead>
                 <tbody id="leaderboard-body">
                     <tr><td colspan="5" style="text-align: center; color: #555; padding: 30px;">Wybierz datę i rozlicz odcinek.</td></tr>
@@ -63,27 +57,10 @@
     </div>
 
     <script>
-        const supabaseUrl = 'https://szzauvjeogsdpleebrgo.supabase.co';
-        const supabaseKey = 'sb_publishable_l2Mh9vUD84rA3CUiuj_LAQ_7z-orOnQ'; 
-        const db = supabase.createClient(supabaseUrl, supabaseKey);
+        const db = supabase.createClient('https://szzauvjeogsdpleebrgo.supabase.co', 'sb_publishable_l2Mh9vUD84rA3CUiuj_LAQ_7z-orOnQ');
 
-        const allPhrases = [
-            "Szkoła surykatki", "Adam", "Spotkanie biznesowe", "Prysznic", "Junku, gdzie jesteś?",
-            "Jedzenie dla Junku", "Angkor Wat", "Rynek", "Kawa", "Robaki dla surykatek",
-            "Mamy gości", "Asia się nagrywa", "Asia patrzy z pogardą", "Ooo kotki!",
-            "Niestety, ale...", "Ulewa", "Zupa", "Inwestor", "Nie sprzedaję farmy",
-            "Sprzedaję farmę", "Mama Juny", "Alan i Eco", "Ewa", "Przepraszam państwa, ale...",
-            "Brenda", "Nic nie jadłem", "Pyszne jedzonko", "Basen", "Biznes lubi ciszę",
-            "Musicie państwo zrozumieć...", "Sklep z filtrami", "Nasze kiszonki", "Burgery",
-            "Paluchy w zbliżeniu", "Lekarz / szpital / ciśnienie", "Motocykl", "Mamy problem",
-            "Sklep AQ", "Fryzjer", "Nowe koszulki", "Nowe buty", "Problem z prądem",
-            "Problem z internetem", "Urodziny Juny", "Tharong", "Wujek od giftów",
-            "Swimming pool", "Prezenty", "Źli Khmerzy", "Nowe T-shirty", "Waterproof jacket",
-            "Gas station", "Ekspres do kawy", "Mamy gości niespodziewanie", "Muszę jechać",
-            "Muszę kupić", "Poliakov", "Zawleczki Cambodia"
-        ];
-
-        const winningLines = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15], [0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15], [0, 5, 10, 15], [3, 6, 9, 12]];
+        const allPhrases = ["szkolasurykatki", "Adam", "Spotkanie biznesowe", "prysznic", "Junku gdzie jestes", "jedzenie dla Junku", "AngkorWat", "rynek", "kawa", "robaki dla surykatek", "mamy Gosci", "Asia sie nagrywa", "Asia patrzy z pogarda", "ooo kotki!", "niestety ale....", "ulewa", "zupa", "inwestor", "nie sprzedaje farmy", "sprzedaje farme", "mama juny", "Alan i Eco", "Ewa", "przepraszam panstwa ale...", "Brenda", "nic nie jadlem", "pySZne jedzonko", "basen", "biznes lubi cisze", "musicie Panstwo zrozumiec...", "sklep z filtrami", "nasze kiszonki", "burgery", "paluchy w zblizeniu", "lekarz / szpital/ cisnienie", "motocykl", "mamy problem", "sklep AQ", "fryzjer", "nowe koszulki", "nowe buty", "problem z pradem", "praoblem z internetem", "urodziny juny", "Tharong", "Wujek od giftow", "Swimming pool", "prezenty", "zli khmerzy", "nowe tshirty", "water proof jacket", "gas station", "express do kawy", "mamy gosci niespodziewanie", "musze jechac", "musze kupic", "poliakov", "zawleczki camodia", "pani z kiosku", "zeby paszport", "problemy z cisnieniem", "AQ filters"];
+        const winningLines = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 
         function renderPhrasesGrid() {
             const grid = document.getElementById('phrases-grid');
@@ -101,16 +78,10 @@
             if(!selectedDate) { alert("Wybierz datę odcinka!"); return; }
 
             statusDiv.innerText = "POBIERANIE KUPONÓW...";
-            const checkedInputs = document.querySelectorAll('.phrase-input:checked');
-            const officialFallenPhrases = Array.from(checkedInputs).map(i => i.value);
+            const officialFallenPhrases = Array.from(document.querySelectorAll('.phrase-input:checked')).map(i => i.value);
 
             try {
-                // Pobieramy kupony tylko dla tej daty
-                const { data: kupony, error } = await db
-                    .from('kupony')
-                    .select('*')
-                    .eq('odcinek_data', selectedDate);
-
+                const { data: kupony, error } = await db.from('kupony').select('*').eq('odcinek_data', selectedDate);
                 if (error) throw error;
                 if (!kupony || kupony.length === 0) { statusDiv.innerText = "BRAK KUPONÓW DLA TEJ DATY!"; return; }
 
@@ -124,13 +95,7 @@
                     return { nick: kupon.nick, score: hits, hasBingo: bingo, matchedTexts: matchedText.join(', ') };
                 }).sort((a,b) => (b.hasBingo - a.hasBingo) || (b.score - a.score));
 
-                // Zapisujemy ranking pod datą
-                const { error: rankError } = await db.from('ranking').insert([{ 
-                    zwyciezcy: processedPlayers, 
-                    odcinek_data: selectedDate 
-                }]);
-                
-                if (rankError) throw rankError;
+                await db.from('ranking').insert([{ zwyciezcy: processedPlayers, odcinek_data: selectedDate }]);
                 renderLeaderboard(processedPlayers);
                 statusDiv.innerText = "SUKCES! WYNIKI OPUBLIKOWANE.";
             } catch (err) { statusDiv.innerText = "BŁĄD: " + err.message; }
