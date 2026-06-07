@@ -20,21 +20,16 @@
         
         h2 { text-align: center; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 2px; margin-top: 0; margin-bottom: 30px; text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); font-size: 2em;}
         
-        /* Styl datownika */
         #datePicker { display: block; margin: 0 auto 20px auto; padding: 12px; border-radius: 6px; background: #111; color: #fff; border: 1px solid var(--neon-cyan); font-size: 1.1em; cursor: pointer; }
 
         .results-table { width: 100%; border-collapse: collapse; text-align: left; }
         .results-table th, .results-table td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .results-table th { background: rgba(0, 240, 255, 0.1); color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 1px; }
-        .results-table tr:hover { background: rgba(255, 255, 255, 0.05); }
         
-        .badge-bingo { background: var(--neon-pink); color: #fff; padding: 5px 10px; border-radius: 6px; font-weight: bold; text-shadow: 0 0 5px #000; box-shadow: 0 0 10px var(--neon-pink); display: inline-block; animation: pulse 1.5s infinite; }
+        .badge-bingo { background: var(--neon-pink); color: #fff; padding: 5px 10px; border-radius: 6px; font-weight: bold; text-shadow: 0 0 5px #000; box-shadow: 0 0 10px var(--neon-pink); display: inline-block; }
         
-        .btn-back { display: block; width: 250px; margin: 30px auto 0 auto; text-align: center; background: transparent; color: #fff; border: 2px solid var(--neon-pink); padding: 15px; text-transform: uppercase; font-weight: bold; border-radius: 6px; text-decoration: none; transition: 0.3s; box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.2); }
-        .btn-back:hover { background: var(--neon-pink); box-shadow: 0 0 20px var(--neon-pink); }
-
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        @media (max-width: 850px) { .results-table { font-size: 0.85em; } .results-table th, .results-table td { padding: 10px 5px; } header { flex-direction: column; gap: 15px; } }
+        .btn-back { display: block; width: 250px; margin: 30px auto 0 auto; text-align: center; background: transparent; color: #fff; border: 2px solid var(--neon-pink); padding: 15px; text-transform: uppercase; font-weight: bold; border-radius: 6px; text-decoration: none; transition: 0.3s; }
+        .btn-back:hover { background: var(--neon-pink); }
     </style>
 </head>
 <body>
@@ -47,66 +42,51 @@
     <div class="main-container">
         <div class="leaderboard-panel">
             <h2>🏆 Loża Szyderców</h2>
-            
             <input type="date" id="datePicker" onchange="fetchResults(this.value)">
             
-            <div style="overflow-x: auto;">
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>Pozycja</th>
-                            <th>Nick</th>
-                            <th>Trafienia</th>
-                            <th>BINGO</th>
-                        </tr>
-                    </thead>
-                    <tbody id="public-leaderboard">
-                        <tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Wybierz datę, aby zobaczyć wyniki...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            <table class="results-table">
+                <thead>
+                    <tr><th>Pozycja</th><th>Nick</th><th>Trafienia</th><th>BINGO</th></tr>
+                </thead>
+                <tbody id="public-leaderboard">
+                    <tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Ładowanie danych...</td></tr>
+                </tbody>
+            </table>
             <a href="index.html" class="btn-back">⬅ WRÓĆ DO GRY</a>
         </div>
     </div>
 
     <script>
-        const supabaseUrl = 'https://szzauvjeogsdpleebrgo.supabase.co';
-        const supabaseKey = 'sb_publishable_l2Mh9vUD84rA3CUiuj_LAQ_7z-orOnQ'; 
-        const db = supabase.createClient(supabaseUrl, supabaseKey);
+        const db = supabase.createClient('https://szzauvjeogsdpleebrgo.supabase.co', 'sb_publishable_l2Mh9vUD84rA3CUiuj_LAQ_7z-orOnQ');
 
         async function fetchResults(selectedDate) {
             const tbody = document.getElementById('public-leaderboard');
-            
-            // Ustaw datę na dzisiejszą, jeśli użytkownik nie wybrał innej
             if (!selectedDate) {
                 selectedDate = new Date().toISOString().split('T')[0];
                 document.getElementById('datePicker').value = selectedDate;
             }
-
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Ładowanie...</td></tr>';
 
             try {
                 // Pobieramy wyniki dla wybranej daty
                 const { data, error } = await db
                     .from('ranking')
                     .select('zwyciezcy')
-                    .eq('odcinek_data', selectedDate) // <-- KLUCZOWA ZMIANA
-                    .single();
+                    .eq('odcinek_data', selectedDate);
                 
-                if (error) {
+                if (error || !data || data.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Brak wyników dla tej daty.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = '';
-                const players = data.zwyciezcy;
+                // Pobieramy ostatni zapisany ranking z tego dnia
+                const players = data[data.length - 1].zwyciezcy;
 
                 players.forEach((player, index) => {
-                    let posStyle = index === 0 ? 'font-size: 1.5em; color: var(--neon-gold);' : ''; 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td style="${posStyle} font-weight: bold;">#${index + 1}</td>
-                        <td style="color: var(--neon-cyan); font-weight: bold; font-size: 1.1em;">${player.nick}</td>
+                        <td style="font-weight: bold;">#${index + 1}</td>
+                        <td style="color: var(--neon-cyan); font-weight: bold;">${player.nick}</td>
                         <td><strong>${player.score} / 16</strong><br><span style="font-size: 0.8em; color: #aaa;">${player.matchedTexts || 'Brak'}</span></td>
                         <td>${player.hasBingo ? '<span class="badge-bingo">BINGO! 🎉</span>' : '-'}</td>
                     `;
@@ -114,12 +94,9 @@
                 });
 
             } catch (error) {
-                console.error("Błąd:", error);
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--neon-pink);">Błąd bazy danych.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--neon-pink);">Błąd połączenia.</td></tr>';
             }
         }
-
-        // Uruchom przy starcie
         fetchResults();
     </script>
 </body>
