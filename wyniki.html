@@ -53,7 +53,7 @@
                         <tr><th>Pozycja</th><th>Nick</th><th>Trafienia</th><th>BINGO</th></tr>
                     </thead>
                     <tbody id="public-leaderboard">
-                        <tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Ładowanie...</td></tr>
+                        <tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Ładowanie danych...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -64,28 +64,33 @@
     <script>
         const db = supabase.createClient('https://szzauvjeogsdpleebrgo.supabase.co', 'sb_publishable_l2Mh9vUD84rA3CUiuj_LAQ_7z-orOnQ');
 
-        async function fetchResults(selectedDate) {
+        async function fetchResults(selectedDate = null) {
             const tbody = document.getElementById('public-leaderboard');
-            if (!selectedDate) {
-                selectedDate = new Date().toISOString().split('T')[0];
-                document.getElementById('datePicker').value = selectedDate;
-            }
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Ładowanie...</td></tr>';
 
             try {
-                // Usuwamy .single(), aby móc bezpiecznie pobrać listę
-                const { data, error } = await db
-                    .from('ranking')
-                    .select('zwyciezcy')
-                    .eq('odcinek_data', selectedDate)
-                    .order('created_at', { ascending: false });
+                let query = db.from('ranking').select('zwyciezcy, odcinek_data');
+
+                // Jeśli użytkownik wybrał datę z kalendarza, szukamy tej konkretnej.
+                // Jeśli nie (czyli przy wejściu na stronę), pobieramy OSTATNIE opublikowane wyniki.
+                if (selectedDate) {
+                    query = query.eq('odcinek_data', selectedDate).order('created_at', { ascending: false });
+                } else {
+                    query = query.order('odcinek_data', { ascending: false }).limit(1);
+                }
+                
+                const { data, error } = await query;
                 
                 if (error || !data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Brak wyników dla tej daty.</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Brak wyników${selectedDate ? ' dla tej daty' : ''}. Szef jeszcze nic nie rozliczył!</td></tr>`;
                     return;
                 }
 
+                // Aktualizujemy kalendarz na datę pobraną z bazy (żeby widz wiedział, jaki dzień ogląda)
+                document.getElementById('datePicker').value = data[0].odcinek_data;
+
                 tbody.innerHTML = '';
-                // Wybieramy pierwszy (najnowszy) rekord dla danej daty
+                // Bierzemy najświeższy wpis wyników (data[0])
                 const players = data[0].zwyciezcy;
 
                 players.forEach((player, index) => {
@@ -94,7 +99,7 @@
                     tr.innerHTML = `
                         <td style="${posStyle} font-weight: bold;">#${index + 1}</td>
                         <td style="color: var(--neon-cyan); font-weight: bold; font-size: 1.1em;">${player.nick}</td>
-                        <td><strong>${player.score} / 16</strong><br><span style="font-size: 0.8em; color: #aaa;">${player.matchedTexts || 'Brak'}</span></td>
+                        <td><strong>${player.score} / 9</strong><br><span style="font-size: 0.8em; color: #aaa;">${player.matchedTexts || 'Brak'}</span></td>
                         <td>${player.hasBingo ? '<span class="badge-bingo">BINGO! 🎉</span>' : '-'}</td>
                     `;
                     tbody.appendChild(tr);
@@ -102,10 +107,11 @@
 
             } catch (error) {
                 console.error("Błąd:", error);
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--neon-pink);">Błąd połączenia.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--neon-pink);">Błąd połączenia z bazą danych.</td></tr>';
             }
         }
 
+        // Uruchom przy starcie BEZ przekazywania daty, aby automatycznie załadować najnowszy odcinek
         fetchResults();
     </script>
 </body>
