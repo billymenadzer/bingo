@@ -35,7 +35,7 @@
     <div class="admin-container">
         <div class="panel-box">
             <h2>Krok 0: Wybierz datę odcinka</h2>
-            <input type="date" id="episodeDate" style="padding: 10px; border-radius: 6px; background: #111; color: #fff; border: 1px solid var(--neon-cyan); width: 200px;">
+            <input type="date" id="episodeDate" onchange="checkExistingResults()" style="padding: 10px; border-radius: 6px; background: #111; color: #fff; border: 1px solid var(--neon-cyan); width: 200px;">
             
             <h2 style="margin-top: 20px;">Krok 1: Zaznacz frazy, które padły</h2>
             <div class="phrases-selector" id="phrases-grid"></div>
@@ -44,13 +44,13 @@
         </div>
 
         <div class="panel-box">
-            <h2>Krok 2: Wyniki dla wybranej daty</h2>
+            <h2>Krok 2: Podgląd Bazy Danych / Wyniki</h2>
             <table class="results-table">
                 <thead>
                     <tr><th>Pozycja</th><th>Nick Gracza</th><th>Trafione Hasła</th><th>Wynik</th><th>BINGO</th></tr>
                 </thead>
                 <tbody id="leaderboard-body">
-                    <tr><td colspan="5" style="text-align: center; color: #555; padding: 30px;">Wybierz datę i rozlicz odcinek.</td></tr>
+                    <tr><td colspan="5" style="text-align: center; color: #555; padding: 30px;">Wybierz datę, aby sprawdzić bazę.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -72,11 +72,43 @@
             });
         }
 
+        // NOWA FUNKCJA: Odpytuje bazę, czy dla wybranej daty są już wyniki
+        async function checkExistingResults() {
+            const date = document.getElementById('episodeDate').value;
+            if(!date) return;
+            
+            const statusDiv = document.getElementById('status-msg');
+            const tbody = document.getElementById('leaderboard-body');
+            statusDiv.style.color = "var(--neon-cyan)";
+            statusDiv.innerText = "SPRAWDZANIE BAZY DANYCH...";
+
+            try {
+                const { data, error } = await db.from('ranking')
+                    .select('*')
+                    .eq('odcinek_data', date)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    renderLeaderboard(data[0].zwyciezcy);
+                    statusDiv.innerHTML = `<span style="color: var(--neon-gold);">Odczytano zapisane wyniki z bazy dla daty: ${date}.<br>Jeśli klikniesz "Rozlicz", system nadpisze je nowymi.</span>`;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #555; padding: 30px;">Brak wyników w bazie. Możesz rozliczyć odcinek.</td></tr>';
+                    statusDiv.innerText = "GOTOWY DO ROZLICZENIA.";
+                }
+            } catch (err) {
+                statusDiv.innerText = "BŁĄD ODCZYTU: " + err.message;
+            }
+        }
+
         async function settleEpisode() {
             const statusDiv = document.getElementById('status-msg');
             const selectedDate = document.getElementById('episodeDate').value;
             if(!selectedDate) { alert("Wybierz datę odcinka!"); return; }
 
+            statusDiv.style.color = "var(--neon-cyan)";
             statusDiv.innerText = "POBIERANIE KUPONÓW...";
             const officialFallenPhrases = Array.from(document.querySelectorAll('.phrase-input:checked')).map(i => i.value);
 
@@ -97,8 +129,12 @@
 
                 await db.from('ranking').insert([{ zwyciezcy: processedPlayers, odcinek_data: selectedDate }]);
                 renderLeaderboard(processedPlayers);
-                statusDiv.innerText = "SUKCES! WYNIKI OPUBLIKOWANE.";
-            } catch (err) { statusDiv.innerText = "BŁĄD: " + err.message; }
+                statusDiv.style.color = "#00ff00";
+                statusDiv.innerText = "SUKCES! WYNIKI ZAPISANE W BAZIE I OPUBLIKOWANE.";
+            } catch (err) { 
+                statusDiv.style.color = "var(--neon-pink)";
+                statusDiv.innerText = "BŁĄD: " + err.message; 
+            }
         }
 
         function renderLeaderboard(players) {
