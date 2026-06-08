@@ -39,12 +39,12 @@
             
             <h2 style="margin-top: 20px;">Krok 1: Zaznacz frazy, które padły</h2>
             <div class="phrases-selector" id="phrases-grid"></div>
-            <button class="btn-action" onclick="settleEpisode()">🚀 Rozlicz Odcinek i Opublikuj Wyniki</button>
+            <button class="btn-action" onclick="settleEpisode()">🚀 Rozlicz Odcinek i Zapisz do Bazy</button>
             <div id="status-msg"></div>
         </div>
 
         <div class="panel-box">
-            <h2>Krok 2: Podgląd Bazy Danych / Wyniki</h2>
+            <h2>Krok 2: Podgląd Wyników</h2>
             <table class="results-table">
                 <thead>
                     <tr><th>Pozycja</th><th>Nick Gracza</th><th>Trafione Hasła</th><th>Wynik</th><th>BINGO</th></tr>
@@ -72,35 +72,25 @@
             });
         }
 
-        // NOWA FUNKCJA: Odpytuje bazę, czy dla wybranej daty są już wyniki
         async function checkExistingResults() {
             const date = document.getElementById('episodeDate').value;
             if(!date) return;
-            
             const statusDiv = document.getElementById('status-msg');
             const tbody = document.getElementById('leaderboard-body');
             statusDiv.style.color = "var(--neon-cyan)";
             statusDiv.innerText = "SPRAWDZANIE BAZY DANYCH...";
 
             try {
-                const { data, error } = await db.from('ranking')
-                    .select('*')
-                    .eq('odcinek_data', date)
-                    .order('created_at', { ascending: false })
-                    .limit(1);
-
+                const { data, error } = await db.from('ranking').select('*').eq('odcinek_data', date).order('created_at', { ascending: false }).limit(1);
                 if (error) throw error;
-
                 if (data && data.length > 0) {
                     renderLeaderboard(data[0].zwyciezcy);
-                    statusDiv.innerHTML = `<span style="color: var(--neon-gold);">Odczytano zapisane wyniki z bazy dla daty: ${date}.<br>Jeśli klikniesz "Rozlicz", system nadpisze je nowymi.</span>`;
+                    statusDiv.innerHTML = `<span style="color: var(--neon-gold);">Odczytano zapisane wyniki dla daty: ${date}.<br>Jeśli rozliczysz odcinek, nadpiszesz je!</span>`;
                 } else {
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #555; padding: 30px;">Brak wyników w bazie. Możesz rozliczyć odcinek.</td></tr>';
                     statusDiv.innerText = "GOTOWY DO ROZLICZENIA.";
                 }
-            } catch (err) {
-                statusDiv.innerText = "BŁĄD ODCZYTU: " + err.message;
-            }
+            } catch (err) { statusDiv.innerHTML = `<span style="color: var(--neon-pink);">BŁĄD ODCZYTU: ${err.message}</span>`; }
         }
 
         async function settleEpisode() {
@@ -109,13 +99,13 @@
             if(!selectedDate) { alert("Wybierz datę odcinka!"); return; }
 
             statusDiv.style.color = "var(--neon-cyan)";
-            statusDiv.innerText = "POBIERANIE KUPONÓW...";
+            statusDiv.innerText = "ROZLICZANIE I ZAPIS DO BAZY...";
             const officialFallenPhrases = Array.from(document.querySelectorAll('.phrase-input:checked')).map(i => i.value);
 
             try {
                 const { data: kupony, error } = await db.from('kupony').select('*').eq('odcinek_data', selectedDate);
                 if (error) throw error;
-                if (!kupony || kupony.length === 0) { statusDiv.innerText = "BRAK KUPONÓW DLA TEJ DATY!"; return; }
+                if (!kupony || kupony.length === 0) { statusDiv.innerHTML = `<span style="color: var(--neon-pink);">BRAK KUPONÓW DLA TEJ DATY!</span>`; return; }
 
                 const processedPlayers = kupony.map(kupon => {
                     const userPhrases = kupon.hasla;
@@ -127,13 +117,14 @@
                     return { nick: kupon.nick, score: hits, hasBingo: bingo, matchedTexts: matchedText.join(', ') };
                 }).sort((a,b) => (b.hasBingo - a.hasBingo) || (b.score - a.score));
 
-                await db.from('ranking').insert([{ zwyciezcy: processedPlayers, odcinek_data: selectedDate }]);
+                // TUTAJ JEST FIX - TERAZ SYSTEM WYEWALUJE BŁĄD, JEŚLI BAZA ODRZUCI ZAPIS
+                const { error: insertError } = await db.from('ranking').insert([{ zwyciezcy: processedPlayers, odcinek_data: selectedDate }]);
+                if (insertError) throw insertError;
+
                 renderLeaderboard(processedPlayers);
-                statusDiv.style.color = "#00ff00";
-                statusDiv.innerText = "SUKCES! WYNIKI ZAPISANE W BAZIE I OPUBLIKOWANE.";
+                statusDiv.innerHTML = `<span style="color: #00ff00;">SUKCES! WYNIKI TWARDO ZAPISANE W BAZIE!</span>`;
             } catch (err) { 
-                statusDiv.style.color = "var(--neon-pink)";
-                statusDiv.innerText = "BŁĄD: " + err.message; 
+                statusDiv.innerHTML = `<span style="color: var(--neon-pink);">FATALNY BŁĄD ZAPISU: ${err.message}</span>`; 
             }
         }
 
