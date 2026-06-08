@@ -64,36 +64,38 @@
     <script>
         const db = supabase.createClient('https://szzauvjeogsdpleebrgo.supabase.co', 'sb_publishable_l2Mh9vUD84rA3CUiuj_LAQ_7z-orOnQ');
 
-        async function fetchResults(selectedDate = null) {
+        async function fetchResults(passedValue) {
             const tbody = document.getElementById('public-leaderboard');
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Ładowanie...</td></tr>';
+            if (!tbody) return;
+            
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Ładowanie danych z bazy...</td></tr>';
 
             try {
-                let query = db.from('ranking').select('zwyciezcy, odcinek_data');
+                let query = db.from('ranking').select('*');
 
-                if (selectedDate) {
-                    // Jeśli widz wybrał konkretną datę z kalendarza, szukamy jej.
-                    // .order('created_at') zapewnia, że jeśli rozliczałeś ten sam dzień 2 razy, pokaże nowszą wersję.
-                    query = query.eq('odcinek_data', selectedDate).order('created_at', { ascending: false }).limit(1);
+                // MORDERCA BŁĘDÓW: Upewniamy się, że to faktycznie tekst daty (np. '2026-06-08'), a nie pusty obiekt z HTMLa
+                let isSpecificDate = (typeof passedValue === 'string' && passedValue.length > 5);
+
+                if (isSpecificDate) {
+                    query = query.eq('odcinek_data', passedValue).order('created_at', { ascending: false }).limit(1);
                 } else {
-                    // DOMYŚLNE WEJŚCIE NA STRONĘ:
-                    // Sortujemy po dacie UTWORZENIA rekordu w bazie. To zawsze pobierze absolutnie
-                    // najświeższą Lożę Szyderców, którą przed chwilą wygenerowałeś w panelu Admina.
+                    // Wymusza absolutnie najnowszy wpis
                     query = query.order('created_at', { ascending: false }).limit(1);
                 }
                 
                 const { data, error } = await query;
+                if (error) throw error;
                 
-                if (error || !data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Brak wyników${selectedDate ? ' dla tej daty' : ''}. Szef jeszcze nic nie rozliczył!</td></tr>`;
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 40px; color: #888;">Brak wyników${isSpecificDate ? ' dla tej daty' : ''}. Szef jeszcze nic nie rozliczył!</td></tr>`;
                     return;
                 }
 
-                // Aktualizujemy kalendarz na datę pobraną z bazy (żeby widz wiedział, jaki dzień ogląda)
-                document.getElementById('datePicker').value = data[0].odcinek_data;
+                // Wymuszamy datę na kalendarzu, żebyś widział co czytasz
+                const datePicker = document.getElementById('datePicker');
+                if (datePicker) datePicker.value = data[0].odcinek_data;
 
                 tbody.innerHTML = '';
-                // Bierzemy najświeższy wpis wyników (data[0])
                 const players = data[0].zwyciezcy;
 
                 players.forEach((player, index) => {
@@ -109,13 +111,13 @@
                 });
 
             } catch (error) {
-                console.error("Błąd:", error);
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--neon-pink);">Błąd połączenia z bazą danych.</td></tr>';
+                console.error("Krytyczny Błąd:", error);
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--neon-pink);">Błąd połączenia: ${error.message}</td></tr>`;
             }
         }
 
-        // Uruchom przy starcie
-        fetchResults();
+        // Twarde wymuszenie null na start, żeby odciąć wszelkie śmieciowe eventy z przeglądarki
+        fetchResults(null);
     </script>
 </body>
 </html>
