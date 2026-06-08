@@ -71,12 +71,15 @@
             try {
                 let query = db.from('ranking').select('zwyciezcy, odcinek_data');
 
-                // Jeśli użytkownik wybrał datę z kalendarza, szukamy tej konkretnej.
-                // Jeśli nie (czyli przy wejściu na stronę), pobieramy OSTATNIE opublikowane wyniki.
                 if (selectedDate) {
-                    query = query.eq('odcinek_data', selectedDate).order('created_at', { ascending: false });
+                    // Jeśli widz wybrał konkretną datę z kalendarza, szukamy jej.
+                    // .order('created_at') zapewnia, że jeśli rozliczałeś ten sam dzień 2 razy, pokaże nowszą wersję.
+                    query = query.eq('odcinek_data', selectedDate).order('created_at', { ascending: false }).limit(1);
                 } else {
-                    query = query.order('odcinek_data', { ascending: false }).limit(1);
+                    // DOMYŚLNE WEJŚCIE NA STRONĘ:
+                    // Sortujemy po dacie UTWORZENIA rekordu w bazie. To zawsze pobierze absolutnie
+                    // najświeższą Lożę Szyderców, którą przed chwilą wygenerowałeś w panelu Admina.
+                    query = query.order('created_at', { ascending: false }).limit(1);
                 }
                 
                 const { data, error } = await query;
@@ -111,7 +114,7 @@
             }
         }
 
-        // Uruchom przy starcie BEZ przekazywania daty, aby automatycznie załadować najnowszy odcinek
+        // Uruchom przy starcie
         fetchResults();
     </script>
 </body>
