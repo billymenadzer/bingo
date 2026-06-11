@@ -57,6 +57,7 @@
         .btn-reset:hover { background: #333; color: #fff; border-color: #888; }
         
         .footer-section { background: rgba(10, 10, 18, 0.95); border-top: 2px solid var(--neon-pink); padding: 30px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: 40px; }
+        .button-group { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 10px; }
         .btn-support { display: inline-block; background: transparent; color: var(--neon-gold); font-weight: bold; text-transform: uppercase; padding: 15px 35px; border: 2px solid var(--neon-gold); border-radius: 8px; text-decoration: none; transition: 0.3s; box-shadow: 0 0 15px rgba(255, 193, 7, 0.3); }
         .btn-support:hover { background: var(--neon-gold); color: var(--dark-bg); box-shadow: 0 0 25px var(--neon-gold); transform: scale(1.05); }
         .sponsor-logo { max-width: 140px; margin-top: 10px; transition: 0.3s; }
@@ -104,10 +105,13 @@
     </div>
 
     <div class="footer-section">
-        <a href="https://buycoffee.to/billymenadzer/" target="_blank" class="btn-support">☕ WESPRZYJ PROJEKT!</a>
-        <a href="wyniki.html" class="btn-support" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">🏆 WYNIKI OSTATNIEGO ODCINKA</a>
+        <div class="button-group">
+            <a href="https://buycoffee.to/billymenadzer/" target="_blank" class="btn-support">☕ WESPRZYJ PROJEKT!</a>
+            <a href="wyniki.html" class="btn-support" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">🏆 WYNIKI OSTATNIEGO ODCINKA</a>
+            <a href="halloffame.html" class="btn-support" style="border-color: var(--neon-gold); color: var(--neon-gold); text-shadow: 0 0 5px var(--neon-gold);">👑 HALL OF FAME</a>
+        </div>
         <div class="sponsor-container">
-            <div style="font-size: 0.85em; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 5px;">Sponsor Główny Projektu</div>
+            <div style="font-size: 0.85em; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 5px; margin-top: 15px;">Sponsor Główny Projektu</div>
             <a href="https://aqfilters.com" target="_blank"><img src="aqfilters.png" alt="AQ Filters" class="sponsor-logo"></a>
         </div>
         <div class="footer-text">Billy.com.pl | billymenadzer@proton.me | cenzobot.billy.com.pl | youtube.com/billymenadzer <br> &copy; 2026</div>
