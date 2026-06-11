@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HALL OF FAME - KAMBO BINGO</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --neon-pink: #ff007f; --neon-cyan: #00f0ff; --neon-gold: #ffc107; 
+            --dark-bg: #0a0a12; --card-bg: rgba(15, 15, 30, 0.85);
+        }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--dark-bg); background-image: url('tlo_kambo.png'); background-size: cover; background-position: center; background-attachment: fixed; color: #ffffff; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: rgba(10, 10, 18, 0.9); border-bottom: 2px solid var(--neon-gold); box-shadow: 0 0 20px rgba(255, 193, 7, 0.4); backdrop-filter: blur(5px); }
+        .game-title { font-size: 2.5em; font-weight: 900; text-transform: uppercase; font-style: italic; color: #fff; text-shadow: 0 0 10px var(--neon-gold), 0 0 20px var(--neon-gold); letter-spacing: 3px; text-decoration: none;}
+        .logo-container img { height: 60px; object-fit: contain; filter: drop-shadow(0 0 8px var(--neon-gold)); }
+        
+        .main-container { max-width: 1200px; width: 95%; margin: 40px auto; flex: 1; }
+        .leaderboard-panel { background: var(--card-bg); border: 2px solid var(--neon-gold); border-radius: 12px; padding: 30px; box-shadow: 0 0 25px rgba(255, 193, 7, 0.25); backdrop-filter: blur(10px); }
+        
+        h2 { text-align: center; color: var(--neon-gold); text-transform: uppercase; letter-spacing: 2px; margin-top: 0; margin-bottom: 30px; text-shadow: 0 0 10px rgba(255, 193, 7, 0.5); font-size: 2.5em;}
+        .subtitle { text-align: center; color: #aaa; margin-top: -20px; margin-bottom: 30px; font-style: italic; }
+
+        .results-table { width: 100%; border-collapse: collapse; text-align: center; }
+        .results-table th, .results-table td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .results-table th { background: rgba(255, 193, 7, 0.1); color: var(--neon-gold); text-transform: uppercase; letter-spacing: 1px; }
+        .results-table tr:hover { background: rgba(255, 255, 255, 0.05); }
+        .results-table td:nth-child(2) { text-align: left; font-weight: bold; font-size: 1.1em; color: var(--neon-cyan); }
+        
+        .badge-bingo { background: var(--neon-pink); color: #fff; padding: 5px 10px; border-radius: 6px; font-weight: bold; text-shadow: 0 0 5px #000; box-shadow: 0 0 10px var(--neon-pink); display: inline-block; }
+        
+        .btn-back { display: block; width: 250px; margin: 30px auto 0 auto; text-align: center; background: transparent; color: #fff; border: 2px solid var(--neon-cyan); padding: 15px; text-transform: uppercase; font-weight: bold; border-radius: 6px; text-decoration: none; transition: 0.3s; box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2); }
+        .btn-back:hover { background: var(--neon-cyan); color: var(--dark-bg); box-shadow: 0 0 20px var(--neon-cyan); }
+
+        .top-1 { font-size: 1.8em; color: var(--neon-gold); font-weight: 900; text-shadow: 0 0 15px var(--neon-gold); }
+        .top-2 { font-size: 1.5em; color: #c0c0c0; font-weight: bold; }
+        .top-3 { font-size: 1.3em; color: #cd7f32; font-weight: bold; }
+
+        @media (max-width: 850px) { .results-table { font-size: 0.85em; } .results-table th, .results-table td { padding: 10px 5px; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="game-title">KAMBO BINGO!</a>
+        <div class="logo-container"><img src="Billy_logo_2.png" alt="Billy Logo"></div>
+    </header>
+
+    <div class="main-container">
+        <div class="leaderboard-panel">
+            <h2>👑 HALL OF FAME 👑</h2>
+            <div class="subtitle" id="stats-summary">Agregacja danych wszech czasów...</div>
+            <div style="overflow-x: auto;">
+                <table class="results-table">
+                    <thead>
+                        <tr><th>Ranga</th><th>Nick Gracza</th><th>Rozegrane Kupony</th><th>Suma Trafień</th><th>Ilość BINGO</th></tr>
+                    </thead>
+                    <tbody id="fame-leaderboard">
+                        <tr><td colspan="5" style="text-align: center; padding: 40px; color: #888;">Trwa skanowanie archiwów Supabase...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <a href="index.html" class="btn-back">⬅ WRÓĆ DO GRY</a>
+        </div>
+    </div>
+
+    <script>
+        const db = supabase.createClient('https://szzauvjeogsdpleebrgo.supabase.co', 'sb_publishable_l2Mh9vUD84rA3CUiuj_LAQ_7z-orOnQ');
+
+        async function fetchHallOfFame() {
+            const tbody = document.getElementById('fame-leaderboard');
+            const summary = document.getElementById('stats-summary');
+
+            try {
+                // Pobieramy całą historię rankingów z bazy
+                const { data, error } = await db.from('ranking').select('zwyciezcy, odcinek_data');
+                if (error) throw error;
+                
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #888;">Baza jest pusta. Brak historii do wyświetlenia!</td></tr>`;
+                    return;
+                }
+
+                // Obiekt do agregacji statystyk
+                const playersStats = {};
+                let totalEpisodes = new Set(); // Do policzenia unikalnych dni
+
+                // Przechodzimy przez każdy zapisany dzień
+                data.forEach(episode => {
+                    totalEpisodes.add(episode.odcinek_data);
+                    
+                    episode.zwyciezcy.forEach(player => {
+                        // Normalizujemy nick (żeby "Kraken" i "kraken" to był ten sam gracz)
+                        const key = player.nick.toLowerCase().trim();
+                        
+                        if (!playersStats[key]) {
+                            playersStats[key] = {
+                                nick: player.nick, // Zatrzymujemy oryginalną pisownię do wyświetlenia
+                                gamesPlayed: 0,
+                                totalScore: 0,
+                                bingos: 0
+                            };
+                        }
+                        
+                        playersStats[key].gamesPlayed += 1;
+                        playersStats[key].totalScore += player.score;
+                        if (player.hasBingo) {
+                            playersStats[key].bingos += 1;
+                        }
+                    });
+                });
+
+                // Zamieniamy obiekt na tablicę i sortujemy
+                // Priorytet 1: Najwięcej Bingo, Priorytet 2: Najwięcej punktów
+                const sortedPlayers = Object.values(playersStats).sort((a, b) => {
+                    if (b.bingos !== a.bingos) return b.bingos - a.bingos;
+                    return b.totalScore - a.totalScore;
+                });
+
+                // Aktualizujemy napis z podsumowaniem
+                summary.innerText = `Przeanalizowano ${totalEpisodes.size} rozliczonych odcinków. Mamy ${sortedPlayers.length} unikalnych graczy!`;
+
+                // Generujemy tabelę
+                tbody.innerHTML = '';
+                sortedPlayers.forEach((player, index) => {
+                    // Stylizowanie TOP 3
+                    let rankStyle = '';
+                    let rankIcon = `#${index + 1}`;
+                    if (index === 0) { rankStyle = 'top-1'; rankIcon = '🥇 #1'; }
+                    else if (index === 1) { rankStyle = 'top-2'; rankIcon = '🥈 #2'; }
+                    else if (index === 2) { rankStyle = 'top-3'; rankIcon = '🥉 #3'; }
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="${rankStyle}">${rankIcon}</td>
+                        <td>${player.nick}</td>
+                        <td style="color: #aaa;">${player.gamesPlayed}</td>
+                        <td style="font-size: 1.2em; font-weight: bold;">${player.totalScore}</td>
+                        <td>${player.bingos > 0 ? `<span class="badge-bingo">${player.bingos}x BINGO!</span>` : '-'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (error) {
+                console.error("Błąd:", error);
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--neon-pink);">Błąd odczytu z bazy: ${error.message}</td></tr>`;
+            }
+        }
+
+        // Uruchomienie skryptu przy starcie strony
+        fetchHallOfFame();
+    </script>
+</body>
+</html>
