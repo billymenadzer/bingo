@@ -1,0 +1,29 @@
+name: Kambo Skynet (Poranny Robot)
+
+on:
+  schedule:
+    - cron: '30 5 * * *' # Odpala codziennie o 07:30 czasu polskiego (05:30 UTC)
+  workflow_dispatch: # To pozwala Ci odpalić bota ręcznie jednym kliknięciem!
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pobieranie plików repozytorium
+        uses: actions/checkout@v3
+
+      - name: Instalowanie Pythona 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Instalacja darmowych narzędzi i bibliotek
+        run: |
+          pip install youtube-transcript-api google-generativeai supabase scrapetube pytz
+
+      - name: Uruchomienie Bota Stefana
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python kambo_bot.py
